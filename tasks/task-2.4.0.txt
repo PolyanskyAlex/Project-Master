@@ -1,0 +1,49 @@
+**>>>ЗАДАЧА<<< 2.4.0: Реализация Комментариев и Логирования Операций**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.3.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.Comment` (id, task_id, user_identifier, content, created_at).
+        *   Определить `models.OperationLog` (id, task_id, user_identifier, operation_type, details JSONB, created_at).
+        *   Реализовать `repositories.CommentRepository` с методами `Create`, `GetByTaskID`, `Delete`.
+        *   Реализовать `repositories.OperationLogRepository` с методом `Create`.
+        *   В `services.TaskService` добавить логику для автоматического создания `OperationLog` при изменении статуса, приоритета, типа, роли задачи.
+        *   Реализовать `services.CommentService` с методами `AddComment`, `GetCommentsByTaskID`.
+        *   Реализовать `handlers.CommentHandler` с HTTP-методами для добавления и получения комментариев.
+        *   Реализовать `handlers.TaskHandler` для получения логов операций по задаче.
+        *   Зарегистрировать маршруты: `GET /api/v1/tasks/{id}/comments`, `POST /api/v1/tasks/{id}/comments`, `DELETE /api/v1/comments/{id}`, `GET /api/v1/tasks/{id}/logs`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`comments`, `operation_logs`).
+    *   **Примеры кода:**
+        ```go
+        // services/task_service.go (фрагмент)
+        func (s *TaskService) UpdateTask(ctx context.Context, task *models.Task) error {
+            existingTask, err := s.taskRepo.GetByID(ctx, task.ID)
+            if err != nil { return err }
+            // ... валидация и обновление задачи
+            if existingTask.Status != task.Status {
+                logEntry := &models.OperationLog{
+                    TaskID: task.ID,
+                    UserIdentifier: "Система", // Или из контекста аутентификации
+                    OperationType: "status_change",
+                    Details: map[string]string{"old_status": existingTask.Status, "new_status": task.Status},
+                }
+                s.operationLogRepo.Create(ctx, logEntry)
+            }
+            // ... аналогично для других полей
+            return s.taskRepo.Update(ctx, task)
+        }
+        ```
+    *   **Цель задачи:** Обеспечить функционал комментариев и автоматического логирования операций для задач.
+    *   **Входные данные:** Текст комментария, данные об изменении задачи.
+    *   **Выходные данные/Ожидаемый результат:** Комментарии и логи операций успешно сохраняются и доступны через API.
+*   **Критерии Приемки:**
+    *   Добавленный комментарий отображается в списке комментариев задачи.
+    *   Изменение статуса задачи создает запись в логе операций.
+    *   Логи операций содержат корректные детали изменений.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `JSONB` тип для поля `details` в `operation_logs`.
+    *   Обеспечить передачу `user_identifier` из контекста запроса.
+*   **Связанные Артефакты:** FT-TASK.7, FT-COMMENT.1-5.
+*   **<<<Окончание задачи>>> 2.4.0**

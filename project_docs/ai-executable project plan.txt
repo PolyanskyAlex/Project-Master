@@ -1,0 +1,2274 @@
+# AI-Executable Project Plan: Система Управления Проектами (Этап 1)
+
+## 1. Обзор Проекта
+
+Данный проект направлен на создание базовой системы управления проектами для разработки программного обеспечения. На первом этапе будет реализован основной функционал по управлению проектами, задачами, комментариями, документами и функциональными блоками. Ключевой особенностью является интеграция с IDE (Cursor/VS Code) через специализированное расширение, позволяющее взаимодействовать с системой напрямую из среды разработки. Функционал, связанный с автоматической генерацией контента посредством ИИ, исключен из данного этапа. Однако, архитектура предусматривает его легкое добавление в будущем.
+
+**Цели проекта:**
+*   Предоставить Пользователю интуитивно понятный веб-интерфейс для управления PM-сущностями.
+*   Разработать надежный и производительный Go-бэкенд с RESTful API.
+*   Обеспечить хранение всех данных в PostgreSQL.
+*   Реализовать глубокую интеграцию с Cursor/VS Code через расширение, позволяющее выполнять операции с PM-сущностями и обрабатывать `.mcp` инструкции.
+*   Заложить основу для будущего расширения функционала ИИ-агентов.
+
+---
+
+## 2. Детализированная Архитектура
+
+### 2.1. Высокоуровневая Архитектура
+
+Система состоит из трех основных компонентов, взаимодействующих через стандартизированные протоколы: Веб-интерфейс, Go-Бэкенд и Расширение для IDE. База данных PostgreSQL является центральным хранилищем данных.
+
+```
++-----------------+       HTTP/JSON       +-----------------+       SQL       +-----------------+
+|                 | <-------------------> |                 | <-------------> |                 |
+|   Веб-интерфейс |                       |   Go-Бэкенд     |                 |   PostgreSQL    |
+|   (Frontend)    |                       |   (API Server)  |                 |   (Database)    |
+|                 |                       |                 |                 |                 |
++-----------------+                       +-----------------+                 +-----------------+
+         ^                                        ^
+         |                                        |
+         |           HTTP/JSON (API Calls)        |
+         |                                        |
+         |                                        |
++-------------------------+                       |
+|                         |                       |
+|   Расширение для IDE    | <---------------------+
+|   (Cursor/VS Code)      |
+|                         |
++-------------------------+
+```
+
+### 2.2. Логическая Архитектура
+
+Go-Бэкенд будет построен по принципам слоистой архитектуры, обеспечивающей разделение ответственности и модульность.
+
+```
++-------------------------------------------------------------------------------------------------+
+|                                          Go-Бэкенд                                              |
++-------------------------------------------------------------------------------------------------+
+|                                                                                                 |
+|  +-----------------+   +-----------------+   +-----------------+   +-----------------+        |
+|  |                 |   |                 |   |                 |   |                 |        |
+|  |    Handlers     |   |     Services    |   |   Repositories  |   |     Models      |        |
+|  | (HTTP API Layer)|<->|(Business Logic) |<->|(Data Access Layer)|<->|(Data Structures)|        |
+|  |                 |   |                 |   |                 |   |                 |        |
+|  +-----------------+   +-----------------+   +-----------------+   +-----------------+        |
+|          ^                                                                                      |
+|          |                                                                                      |
+|          | (Routing)                                                                            |
+|          |                                                                                      |
+|  +-----------------+                                                                            |
+|  |                 |                                                                            |
+|  |     Router      |                                                                            |
+|  | (HTTP Routing)  |                                                                            |
+|  |                 |                                                                            |
+|  +-----------------+                                                                            |
+|                                                                                                 |
++-------------------------------------------------------------------------------------------------+
+          |
+          | (DB Connection)
+          V
++-----------------+
+|   PostgreSQL    |
++-----------------+
+```
+
+*   **Router:** Отвечает за маршрутизацию входящих HTTP-запросов к соответствующим обработчикам (Handlers).
+*   **Handlers:** Обрабатывают HTTP-запросы, парсят входные данные, вызывают методы из слоя Services и формируют HTTP-ответы. Отвечают за взаимодействие с внешним миром.
+*   **Services:** Содержат основную бизнес-логику приложения. Координируют работу репозиториев, выполняют валидацию, применяют бизнес-правила.
+*   **Repositories:** Отвечают за взаимодействие с базой данных. Предоставляют абстракцию для CRUD-операций над сущностями, скрывая детали работы с БД.
+*   **Models:** Определяют структуры данных (Go structs), представляющие сущности предметной области (Project, Task, Document, Comment, FunctionalBlock, OperationLog). Используются всеми слоями.
+
+**Структура каталогов Go-Бэкенда:**
+
+```
+project-manager/
+├── main.go                     # Точка входа, инициализация сервера, роутера, БД
+├── go.mod                      # Модуль Go
+├── go.sum
+├── Dockerfile                  # Для сборки Go-приложения
+├── docker-compose.yml          # Для запуска PostgreSQL
+├── .env                        # Переменные окружения (DB_URL, PORT, API_KEY)
+├── config/                     # Настройки приложения
+│   └── config.go               # Загрузка конфигурации из .env
+├── database/                   # Подключение к БД, миграции
+│   ├── db.go                   # Функции подключения и инициализации БД
+│   └── migrations/             # SQL-файлы для миграций
+│       ├── 001_create_tables.up.sql
+│       └── 001_create_tables.down.sql
+├── models/                     # Структуры данных (Go structs)
+│   ├── project.go
+│   ├── task.go
+│   ├── document.go
+│   ├── comment.go
+│   ├── functional_block.go
+│   └── operation_log.go
+├── repositories/               # Взаимодействие с БД (CRUD)
+│   ├── project_repo.go
+│   ├── task_repo.go
+│   ├── document_repo.go
+│   ├── comment_repo.go
+│   └── functional_block_repo.go
+├── services/                   # Бизнес-логика
+│   ├── project_service.go      # Логика для проектов
+│   ├── task_service.go         # Логика для задач (включая нумерацию, валидацию статусов)
+│   ├── document_service.go     # Логика для документов
+│   ├── functional_block_service.go # Логика для функциональных блоков
+│   └── auth_service.go         # Простая аутентификация
+├── handlers/                   # Обработчики HTTP-запросов
+│   ├── project_handler.go
+│   ├── task_handler.go
+│   ├── document_handler.go
+│   ├── functional_block_handler.go
+│   └── auth_handler.go
+├── router/                     # Настройка маршрутизатора
+│   └── router.go               # Определение всех HTTP-маршрутов
+└── utils/                      # Вспомогательные утилиты
+    └── uuid.go                 # Генерация UUID
+    └── validation.go           # Функции валидации
+```
+
+**Структура каталогов Веб-интерфейса (Frontend - React/Vue/Angular):**
+
+```
+frontend/
+├── public/
+├── src/
+│   ├── App.js/tsx              # Главный компонент приложения
+│   ├── index.js/tsx            # Точка входа
+│   ├── components/             # Переиспользуемые UI-компоненты (кнопки, формы, таблицы)
+│   │   ├── Header.js/tsx       # Панель навигации
+│   │   ├── ProjectCard.js/tsx
+│   │   ├── TaskItem.js/tsx
+│   │   └── DocumentEditor.js/tsx # Редактор документов с подсветкой JSON
+│   ├── pages/                  # Страницы приложения
+│   │   ├── ProjectsPage.js/tsx
+│   │   ├── ProjectDetailsPage.js/tsx
+│   │   ├── TaskDetailsPage.js/tsx
+│   │   ├── DocumentDetailsPage.js/tsx
+│   │   ├── FunctionalBlocksPage.js/tsx
+│   │   └── SettingsPage.js/tsx
+│   ├── services/               # Взаимодействие с Go-бэкендом (API-клиент)
+│   │   ├── api.js/ts
+│   │   ├── projectService.js/ts
+│   │   ├── taskService.js/ts
+│   │   └── ...
+│   ├── hooks/                  # Пользовательские хуки (для React)
+│   ├── store/                  # Управление состоянием (Redux/Zustand/Vuex)
+│   ├── styles/                 # Глобальные стили, утилиты CSS
+│   └── utils/                  # Вспомогательные функции (форматирование, валидация UI)
+├── package.json
+├── tsconfig.json (если TypeScript)
+```
+
+**Структура каталогов Расширения для IDE (VS Code Extension):**
+
+```
+vscode-extension/
+├── package.json                # Манифест расширения
+├── tsconfig.json
+├── src/
+│   ├── extension.ts            # Точка входа расширения, регистрация команд, Tree View
+│   ├── api/                    # Клиент для Go-бэкенда
+│   │   └── pmApiClient.ts
+│   ├── views/                  # Логика для Tree View провайдеров
+│   │   ├── projectsProvider.ts
+│   │   └── tasksProvider.ts
+│   ├── commands/               # Реализация команд (createTask, openDocument, executeMcp)
+│   │   ├── projectCommands.ts
+│   │   ├── taskCommands.ts
+│   │   ├── documentCommands.ts
+│   │   └── mcpCommands.ts
+│   ├── models/                 # TypeScript интерфейсы для данных PM-системы
+│   │   ├── project.ts
+│   │   ├── task.ts
+│   │   └── document.ts
+│   ├── utils/                  # Вспомогательные утилиты (парсинг .mcp, уведомления)
+│   │   └── mcpParser.ts
+│   └── config.ts               # Управление настройками расширения
+├── .vscodeignore
+├── README.md
+```
+
+### 2.3. Физическая/Развертываемая Архитектура
+
+На первом этапе система будет развернута локально с использованием Docker Compose для упрощения управления зависимостями.
+
+```
++-------------------------------------------------------------------------------------------------+
+|                                          Хост-система                                           |
+|                                                                                                 |
+|  +-------------------------------------------------------------------------------------------+  |
+|  |                                      Docker Engine                                        |  |
+|  |                                                                                           |  |
+|  |  +-----------------+      +-----------------+      +-----------------+      +---------+  |  |
+|  |  |                 |      |                 |      |                 |      |         |  |  |
+|  |  |   Container:    |      |   Container:    |      |   Container:    |      |  Volume |  |  |
+|  |  |   PostgreSQL    |      |   Go-Бэкенд     |      |   Веб-интерфейс |      |  db_data|  |  |
+|  |  |   (db)          |      |   (go_app)      |      |   (frontend)    |      |         |  |  |
+|  |  |   Port: 5432    |      |   Port: 8080    |      |   Port: 3000    |      |         |  |  |
+|  |  +-----------------+      +-----------------+      +-----------------+      +---------+  |  |
+|  |          ^                        ^                        ^                                |
+|  |          |                        |                        |                                |
+|  |          +------------------------+------------------------+ (Internal Docker Network)      |
+|  |                                                                                           |  |
+|  +-------------------------------------------------------------------------------------------+  |
+|                                                                                                 |
+|  +-------------------------+                                                                    |
+|  |                         |                                                                    |
+|  |   Cursor IDE / VS Code  | <-----------------------------------------------------------------+
+|  |   (с установленным      |                                 HTTP/JSON (localhost:8080)        |
+|  |   Расширением)          |                                                                    |
+|  +-------------------------+                                                                    |
+|                                                                                                 |
++-------------------------------------------------------------------------------------------------+
+```
+
+*   **PostgreSQL Container (`db`):** Изолированный контейнер для базы данных. Данные будут персистентно храниться в Docker Volume (`db_data`).
+*   **Go Backend Container (`go_app`):** Контейнер для Go-приложения. Будет слушать на порту 8080. Взаимодействует с `db` по внутренней сети Docker.
+*   **Frontend Container (`frontend`):** Контейнер для веб-интерфейса. Будет слушать на порту 3000 (или другом, используемом фреймворком). Взаимодействует с `go_app` по внутренней сети Docker.
+*   **Cursor IDE / VS Code:** Запускается на хост-системе. Расширение внутри IDE будет обращаться к Go-бэкенду по `localhost:8080`.
+
+### 2.4. Технологический Стек
+
+*   **Бэкенд:**
+    *   **Язык:** Go (Golang)
+    *   **Веб-фреймворк:** `github.com/go-chi/chi/v5` (легковесный, модульный роутер)
+    *   **ORM/DB Driver:** `github.com/jackc/pgx/v5` (высокопроизводительный драйвер для PostgreSQL)
+    *   **Миграции БД:** `github.com/golang-migrate/migrate/v4`
+    *   **Конфигурация:** `github.com/joho/godotenv` (для загрузки .env)
+    *   **UUID:** `github.com/google/uuid`
+    *   **Обоснование:** Go выбран за его производительность, низкое потребление ресурсов, сильную типизацию и отличную поддержку конкурентности, что делает его идеальным для бэкенд-сервисов. `Chi` и `pgx` — легковесные и производительные библиотеки, соответствующие философии Go.
+*   **База Данных:**
+    *   **СУБД:** PostgreSQL
+    *   **Обоснование:** PostgreSQL — мощная, надежная, объектно-реляционная СУБД с открытым исходным кодом, хорошо подходящая для структурированных данных и обеспечивающая целостность данных.
+*   **Веб-интерфейс (Frontend):**
+    *   **Фреймворк:** React (с Create React App или Vite)
+    *   **UI-библиотека/Стили:** Tailwind CSS (для быстрого и гибкого стилизования) или Chakra UI/Material UI (для готовых компонентов).
+    *   **Обоснование:** React — один из самых популярных и зрелых JavaScript-фреймворков для создания интерактивных пользовательских интерфейсов, с большим сообществом и экосистемой. Tailwind CSS обеспечивает высокую гибкость в дизайне.
+*   **Расширение для IDE:**
+    *   **Язык:** TypeScript
+    *   **API:** VS Code Extension API
+    *   **HTTP-клиент:** `axios` или встроенный `fetch`
+    *   **Обоснование:** TypeScript обеспечивает строгую типизацию и улучшает поддерживаемость кода. VS Code Extension API — это стандартный способ взаимодействия с IDE.
+
+### 2.5. Модели Данных
+
+Предварительные схемы таблиц в PostgreSQL. Все таблицы будут иметь `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`, `created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`, `updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`.
+
+**`functional_blocks`**
+```
++-------------------+---------------------+---------------------------------+
+|      Column       |        Type         |           Description           |
++-------------------+---------------------+---------------------------------+
+| id                | UUID                | Уникальный идентификатор блока  |
+| name              | VARCHAR(255)        | Название функционального блока  |
+| prefix            | VARCHAR(6) UNIQUE   | Уникальный префикс (до 6 лат. букв) |
+| created_at        | TIMESTAMP WITH TIME ZONE | Время создания               |
+| updated_at        | TIMESTAMP WITH TIME ZONE | Время последнего обновления  |
++-------------------+---------------------+---------------------------------+
+```
+
+**`projects`**
+```
++-------------------+---------------------+---------------------------------+
+|      Column       |        Type         |           Description           |
++-------------------+---------------------+---------------------------------+
+| id                | UUID                | Уникальный идентификатор проекта|
+| name              | VARCHAR(255) NOT NULL | Название проекта              |
+| description       | TEXT                | Описание проекта              |
+| status            | VARCHAR(50)         | Статус проекта (New, In Progress, Done) |
+| created_at        | TIMESTAMP WITH TIME ZONE | Время создания               |
+| updated_at        | TIMESTAMP WITH TIME ZONE | Время последнего обновления  |
++-------------------+---------------------+---------------------------------+
+```
+
+**`tasks`**
+```
++-------------------+---------------------+---------------------------------+
+|      Column       |        Type         |           Description           |
++-------------------+---------------------+---------------------------------+
+| id                | UUID                | Уникальный идентификатор задачи |
+| project_id        | UUID REFERENCES projects(id) | ID проекта, к которому привязана задача |
+| functional_block_id | UUID REFERENCES functional_blocks(id) | ID функционального блока (NULLABLE) |
+| number            | VARCHAR(255) UNIQUE | Уникальный номер задачи (AUTH-123) |
+| title             | VARCHAR(255) NOT NULL | Название задачи               |
+| description       | TEXT                | Описание задачи               |
+| status            | VARCHAR(50)         | Статус задачи (To Do, In Progress, Done, etc.) |
+| priority          | VARCHAR(50)         | Приоритет задачи (High, Medium, Low) |
+| type              | VARCHAR(50)         | Тип задачи (New Feature, Bug, Refactoring, etc.) |
+| role              | VARCHAR(255)        | Предполагаемая роль исполнителя |
+| result            | TEXT                | Результат выполнения задачи (для конечных статусов) |
+| parent_task_id    | UUID REFERENCES tasks(id) | ID родительской задачи (для дефектов) |
+| created_at        | TIMESTAMP WITH TIME ZONE | Время создания               |
+| updated_at        | TIMESTAMP WITH TIME ZONE | Время последнего обновления  |
++-------------------+---------------------+---------------------------------+
+```
+
+**`comments`**
+```
++-------------------+---------------------+---------------------------------+
+|      Column       |        Type         |           Description           |
++-------------------+---------------------+---------------------------------+
+| id                | UUID                | Уникальный идентификатор комментария |
+| task_id           | UUID REFERENCES tasks(id) | ID задачи, к которой привязана комментарий |
+| user_identifier   | VARCHAR(255)        | Идентификатор пользователя/агента (e.g., "Пользователь", "AI Агент") |
+| content           | TEXT                | Текст комментария             |
+| created_at        | TIMESTAMP WITH TIME ZONE | Время создания               |
++-------------------+---------------------+---------------------------------+
+```
+
+**`documents`**
+```
++-------------------+---------------------+---------------------------------+
+|      Column       |        Type         |           Description           |
++-------------------+---------------------+---------------------------------+
+| id                | UUID                | Уникальный идентификатор документа |
+| project_id        | UUID REFERENCES projects(id) | ID проекта, к которому привязан документ |
+| type              | VARCHAR(50)         | Тип документа (BRD, SAD, AI-Ready, AI Executable) |
+| title             | VARCHAR(255)        | Заголовок документа           |
+| content           | TEXT                | Содержание документа (Markdown/JSON) |
+| agent_editable    | BOOLEAN             | Флаг: разрешено ли AI-агенту редактировать |
+| created_at        | TIMESTAMP WITH TIME ZONE | Время создания               |
+| updated_at        | TIMESTAMP WITH TIME ZONE | Время последнего обновления  |
++-------------------+---------------------+---------------------------------+
+```
+
+**`operation_logs`**
+```
++-------------------+---------------------+---------------------------------+
+|      Column       |        Type         |           Description           |
++-------------------+---------------------+---------------------------------+
+| id                | UUID                | Уникальный идентификатор лога   |
+| task_id           | UUID REFERENCES tasks(id) | ID задачи, к которой относится лог |
+| user_identifier   | VARCHAR(255)        | Идентификатор пользователя/агента |
+| operation_type    | VARCHAR(50)         | Тип операции (e.g., "status_change", "priority_update") |
+| details           | JSONB               | Детали операции (e.g., {"old_status": "ToDo", "new_status": "In Progress"}) |
+| created_at        | TIMESTAMP WITH TIME ZONE | Время операции               |
++-------------------+---------------------+---------------------------------+
+```
+
+**`project_plan_sequences`**
+```
++-------------------+---------------------+---------------------------------+
+|      Column       |        Type         |           Description           |
++-------------------+---------------------+---------------------------------+
+| id                | UUID                | Уникальный идентификатор записи |
+| project_id        | UUID REFERENCES projects(id) | ID проекта, к которому относится план |
+| task_id           | UUID REFERENCES tasks(id) | ID задачи в последовательности |
+| sequence_order    | INTEGER             | Порядок задачи в плане (1, 2, 3...) |
+| created_at        | TIMESTAMP WITH TIME ZONE | Время создания               |
+| updated_at        | TIMESTAMP WITH TIME ZONE | Время последнего обновления  |
++-------------------+---------------------+---------------------------------+
+```
+
+### 2.6. Принципы Проектирования, Безопасность, Масштабируемость, Отказоустойчивость
+
+*   **Принципы Проектирования:**
+    *   **SOLID:** Применяется в Go-бэкенде для обеспечения модульности, тестируемости и расширяемости (например, разделение репозиториев и сервисов).
+    *   **DRY (Don't Repeat Yourself):** Избегание дублирования кода, особенно в логике валидации и взаимодействии с БД.
+    *   **Clean Architecture / Layered Architecture:** Четкое разделение слоев (Handlers, Services, Repositories, Models) для изоляции бизнес-логики от деталей инфраструктуры.
+    *   **Domain-Driven Design (DDD) Lite:** Сущности (Project, Task, Document) и их поведение определяются в слое Models и Services.
+*   **Безопасность:**
+    *   **Аутентификация:** На первом этапе — простой API-ключ/предопределенный логин-пароль. В будущем — JWT или OAuth2.
+    *   **Валидация Входных Данных:** Строгая валидация всех входящих запросов на бэкенде для предотвращения инъекций и некорректных данных.
+    *   **Защита от SQL-инъекций:** Использование параметризованных запросов через `pgx`.
+    *   **HTTPS:** В продакшене обязательно, на локальном этапе — опционально.
+    *   **Разделение ролей:** На данном этапе минимальное, но архитектура БД позволяет в будущем добавить полноценную ролевую модель.
+*   **Масштабируемость:**
+    *   **Stateless Backend:** Go-бэкенд будет stateless, что позволит легко горизонтально масштабировать его путем добавления новых инстансов.
+    *   **PostgreSQL:** Выбран как масштабируемая реляционная СУБД.
+    *   **Docker/Containerization:** Обеспечивает легкое развертывание и масштабирование компонентов.
+*   **Отказоустойчивость:**
+    *   **Контейнеризация:** Позволяет легко перезапускать упавшие сервисы.
+    *   **Логирование:** Подробное логирование для быстрого выявления и устранения проблем.
+    *   **Обработка Ошибок:** Грамотная обработка ошибок на всех уровнях (API, БД, бизнес-логика) с возвратом информативных сообщений.
+
+### 2.7. API и Протоколы Взаимодействия
+
+Все взаимодействия между компонентами (Frontend <-> Go Backend, Extension <-> Go Backend) осуществляются по протоколу **HTTP/1.1** с использованием формата данных **JSON**.
+
+**Пример API-эндпоинтов (Go Backend):**
+
+```
++-------------------------------------------------------------------------------------------------+
+|                                          Go-Бэкенд API                                          |
++-------------------------------------------------------------------------------------------------+
+|                                                                                                 |
+|  /api/v1/auth/login (POST)                                                                      |
+|  /api/v1/functional-blocks (GET, POST)                                                          |
+|  /api/v1/functional-blocks/{id} (GET, PUT, DELETE)                                              |
+|  /api/v1/projects (GET, POST)                                                                   |
+|  /api/v1/projects/{id} (GET, PUT, DELETE)                                                       |
+|  /api/v1/projects/{id}/tasks (GET, POST)                                                        |
+|  /api/v1/tasks/{id} (GET, PUT, DELETE)                                                          |
+|  /api/v1/tasks/{id}/comments (GET, POST)                                                        |
+|  /api/v1/comments/{id} (DELETE)                                                                 |
+|  /api/v1/projects/{id}/documents (GET, POST)                                                    |
+|  /api/v1/documents/{id} (GET, PUT, DELETE)                                                      |
+|  /api/v1/projects/{id}/plan (GET, PUT)                                                          |
+|  /api/v1/tasks/{id}/logs (GET)                                                                  |
+|                                                                                                 |
++-------------------------------------------------------------------------------------------------+
+```
+
+**Пример JSON-контракта для создания задачи (`POST /api/v1/projects/{id}/tasks`):**
+
+```json
+{
+  "title": "Реализовать авторизацию пользователя",
+  "description": "Разработать функционал регистрации, входа и выхода из системы.",
+  "status": "Новая",
+  "priority": "Высокий",
+  "type": "Новый функционал",
+  "role": "Backend Dev",
+  "functionalBlockId": "uuid-функционального-блока-авторизации"
+}
+```
+
+**Пример JSON-контракта для обновления статуса задачи (`PUT /api/v1/tasks/{id}`):**
+
+```json
+{
+  "status": "Done",
+  "result": "Функционал авторизации полностью реализован и протестирован."
+}
+```
+
+---
+
+## 3. Детализированный Перечень Задач
+
+### 3.1. Фаза 1: Инициализация и Настройка
+
+**>>>ЗАДАЧА<<< 1.0.0: Инициализация Go-проекта и базовой структуры**
+*   **Статус:** Ожидание
+*   **Зависимости:** Нет
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать новый Go-модуль. Инициализировать базовую структуру каталогов (`config`, `database`, `models`, `repositories`, `services`, `handlers`, `router`, `utils`). Создать `main.go` как точку входа.
+    *   **Схемы/диаграммы:**
+        ```
+        project-manager/
+        ├── main.go
+        ├── go.mod
+        ├── go.sum
+        ├── config/
+        ├── database/
+        ├── models/
+        ├── repositories/
+        ├── services/
+        ├── handlers/
+        ├── router/
+        └── utils/
+        ```
+    *   **Примеры кода:**
+        ```go
+        // main.go
+        package main
+        import "fmt"
+        func main() { fmt.Println("Project Manager Backend") }
+        ```
+    *   **Цель задачи:** Подготовить базовую структуру проекта для дальнейшей разработки.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** Созданный Go-модуль и пустая структура каталогов.
+*   **Критерии Приемки:**
+    *   `go.mod` файл существует.
+    *   Все указанные каталоги созданы.
+    *   `main.go` компилируется и запускается без ошибок.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `go mod init <your_module_name>`.
+    *   Создать каталоги с помощью `mkdir`.
+*   **Связанные Артефакты:** 2.2. Логическая Архитектура (Структура каталогов).
+*   **<<<Окончание задачи>>> 1.0.0**
+
+**>>>ЗАДАЧА<<< 1.1.0: Настройка Docker Compose для PostgreSQL**
+*   **Статус:** Ожидание
+*   **Зависимости:** Нет
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать `docker-compose.yml` для запуска контейнера PostgreSQL. Определить сервис `db`, использовать образ `postgres:15-alpine`. Настроить переменные окружения для имени БД, пользователя и пароля. Пробросить порт 5432. Создать Docker Volume для персистентного хранения данных.
+    *   **Схемы/диаграммы:** См. 2.3. Физическая/Развертываемая Архитектура.
+    *   **Примеры кода:**
+        ```yaml
+        # docker-compose.yml
+        version: '3.8'
+        services:
+          db:
+            image: postgres:15-alpine
+            restart: always
+            environment:
+              POSTGRES_DB: project_manager_db
+              POSTGRES_USER: user
+              POSTGRES_PASSWORD: password
+            ports:
+              - "5432:5432"
+            volumes:
+              - db_data:/var/lib/postgresql/data
+        volumes:
+          db_data:
+        ```
+    *   **Цель задачи:** Обеспечить локальный запуск PostgreSQL для разработки.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** Контейнер PostgreSQL успешно запускается и доступен на порту 5432.
+*   **Критерии Приемки:**
+    *   `docker-compose.yml` создан.
+    *   Команда `docker-compose up -d db` успешно запускает контейнер `db`.
+    *   Можно подключиться к БД с помощью `psql` или другого клиента.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `docker-compose up -d`.
+    *   Проверить статус контейнера `docker-compose ps`.
+*   **Связанные Артефакты:** 2.3. Физическая/Развертываемая Архитектура.
+*   **<<<Окончание задачи>>> 1.1.0**
+
+**>>>ЗАДАЧА<<< 1.2.0: Реализация подключения Go-бэкенда к PostgreSQL и миграций**
+*   **Статус:** Ожидание
+*   **Зависимости:** 1.0.0, 1.1.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `config/config.go` реализовать загрузку `DATABASE_URL` из `.env`. В `database/db.go` реализовать функцию `ConnectDB` для создания пула соединений `pgxpool.Pool` и функцию `RunMigrations` для применения миграций. Создать папку `database/migrations` и первый SQL-файл миграции (`001_create_tables.up.sql`) для создания всех базовых таблиц (`functional_blocks`, `projects`, `tasks`, `comments`, `documents`, `operation_logs`, `project_plan_sequences`) согласно 2.5. Модели Данных.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных.
+    *   **Примеры кода:**
+        ```go
+        // config/config.go
+        package config
+        import ( "os"; "log"; "github.com/joho/godotenv" )
+        type Config struct { DatabaseURL string; ServerPort string; APIKey string } // Добавить APIKey
+        func LoadConfig() *Config {
+            err := godotenv.Load()
+            if err != nil { log.Println("No .env file found, relying on environment variables") }
+            return &Config{DatabaseURL: os.Getenv("DATABASE_URL"), ServerPort: os.Getenv("PORT"), APIKey: os.Getenv("API_KEY")}
+        }
+
+        // database/db.go
+        package database
+        import ( "context"; "log"; "github.com/jackc/pgx/v5/pgxpool"; "github.com/golang-migrate/migrate/v4"; _ "github.com/golang-migrate/migrate/v4/database/postgres"; _ "github.com/golang-migrate/migrate/v4/source/file" )
+        var DB *pgxpool.Pool
+        func ConnectDB(databaseURL string) {
+            var err error
+            DB, err = pgxpool.New(context.Background(), databaseURL)
+            if err != nil { log.Fatalf("Unable to connect to database: %v\n", err) }
+            err = DB.Ping(context.Background())
+            if err != nil { log.Fatalf("Cannot ping database: %v\n", err) }
+            log.Println("Connected to database!")
+        }
+        func RunMigrations(databaseURL, migrationsPath string) {
+            m, err := migrate.New(fmt.Sprintf("file://%s", migrationsPath), databaseURL)
+            if err != nil { log.Fatalf("Error creating migrate instance: %v\n", err) }
+            if err := m.Up(); err != nil && err != migrate.ErrNoChange { log.Fatalf("Error running migrations: %v\n", err) }
+            log.Println("Database migrations applied!")
+        }
+
+        // database/migrations/001_create_tables.up.sql
+        CREATE TABLE IF NOT EXISTS functional_blocks (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(255) NOT NULL,
+            prefix VARCHAR(6) UNIQUE NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS projects (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            status VARCHAR(50) DEFAULT 'Новый',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS tasks (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            functional_block_id UUID REFERENCES functional_blocks(id),
+            number VARCHAR(255) UNIQUE NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            status VARCHAR(50) DEFAULT 'Новая',
+            priority VARCHAR(50) DEFAULT 'Средний',
+            type VARCHAR(50) DEFAULT 'Новый функционал',
+            role VARCHAR(255),
+            result TEXT,
+            parent_task_id UUID REFERENCES tasks(id), -- Для дефектов
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS comments (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            user_identifier VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS documents (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            type VARCHAR(50) NOT NULL, -- e.g., 'BRD', 'SAD', 'AI-Ready', 'AI Executable'
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            agent_editable BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS operation_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            user_identifier VARCHAR(255) NOT NULL,
+            operation_type VARCHAR(50) NOT NULL,
+            details JSONB,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS project_plan_sequences (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            sequence_order INTEGER NOT NULL,
+            UNIQUE (project_id, task_id), -- Задача может быть в плане только один раз
+            UNIQUE (project_id, sequence_order), -- Порядок уникален для проекта
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Таблица для глобального счетчика номеров задач
+        CREATE TABLE IF NOT EXISTS task_number_sequence (
+            id SERIAL PRIMARY KEY,
+            current_value BIGINT NOT NULL DEFAULT 0
+        );
+        INSERT INTO task_number_sequence (id, current_value) VALUES (1, 0) ON CONFLICT (id) DO NOTHING;
+        ```
+    *   **Цель задачи:** Установить соединение с БД и обеспечить автоматическое создание/обновление схемы БД.
+    *   **Входные данные:** `DATABASE_URL` в `.env`.
+    *   **Выходные данные/Ожидаемый результат:** Go-приложение успешно подключается к PostgreSQL и применяет миграции.
+*   **Критерии Приемки:**
+    *   Все таблицы из 2.5. Модели Данных созданы в БД после запуска приложения.
+    *   Таблица `task_number_sequence` создана и содержит одну запись с `current_value = 0`.
+    *   Логи приложения показывают успешное подключение и применение миграций.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `pgxpool.New` для создания пула.
+    *   Использовать `migrate.New` и `m.Up()` для миграций.
+    *   Добавить `gen_random_uuid()` в SQL-схему для UUID.
+*   **Связанные Артефакты:** 2.5. Модели Данных.
+*   **<<<Окончание задачи>>> 1.2.0**
+
+**>>>ЗАДАЧА<<< 1.3.0: Реализация базового HTTP-сервера и роутера**
+*   **Статус:** Ожидание
+*   **Зависимости:** 1.0.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `main.go` инициализировать `chi.Router`. В `router/router.go` определить функцию `NewRouter` для настройки базовых маршрутов (например, `/health`). В `main.go` запустить HTTP-сервер, слушающий на порту из конфигурации.
+    *   **Схемы/диаграммы:** См. 2.2. Логическая АрхиITECTURE (Router).
+    *   **Примеры кода:**
+        ```go
+        // router/router.go
+        package router
+        import ( "net/http"; "github.com/go-chi/chi/v5" )
+        func NewRouter() *chi.Mux {
+            r := chi.NewRouter()
+            r.Get("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
+            return r
+        }
+
+        // main.go
+        package main
+        import ( "net/http"; "log"; "your_module_name/config"; "your_module_name/router"; "your_module_name/database" )
+        func main() {
+            cfg := config.LoadConfig()
+            database.ConnectDB(cfg.DatabaseURL)
+            database.RunMigrations(cfg.DatabaseURL, "./database/migrations") // Путь к миграциям
+            r := router.NewRouter()
+            log.Printf("Server starting on port %s\n", cfg.ServerPort)
+            log.Fatal(http.ListenAndServe(":"+cfg.ServerPort, r))
+        }
+        ```
+    *   **Цель задачи:** Создать работающий HTTP-сервер, способный принимать запросы.
+    *   **Входные данные:** `PORT` в `.env`.
+    *   **Выходные данные/Ожидаемый результат:** Сервер запускается, эндпоинт `/health` возвращает "OK".
+*   **Критерии Приемки:**
+    *   Сервер успешно запускается без ошибок.
+    *   HTTP-запрос к `http://localhost:8080/health` возвращает статус 200 и тело "OK".
+*   **Технические Детали/Инструкции:**
+    *   Использовать `chi.NewRouter()`.
+    *   Использовать `http.ListenAndServe()`.
+*   **Связанные Артефакты:** 2.7. API и Протоколы Взаимодействия.
+*   **<<<Окончание задачи>>> 1.3.0**
+
+**>>>ЗАДАЧА<<< 1.4.0: Реализация базовой аутентификации по API-ключу**
+*   **Статус:** Ожидание
+*   **Зависимости:** 1.3.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `config/config.go` добавить загрузку `API_KEY` из `.env`. В `services/auth_service.go` реализовать функцию для проверки API-ключа. В `router/router.go` создать middleware для `chi`, который будет проверять наличие и валидность `X-API-Key` заголовка для всех защищенных маршрутов.
+    *   **Схемы/диаграммы:**
+        ```
+        Request -> Middleware (Check API Key) -> Handler
+        ```
+    *   **Примеры кода:**
+        ```go
+        // services/auth_service.go
+        package services
+        import "your_module_name/config"
+        type AuthService struct { apiKey string }
+        func NewAuthService(cfg *config.Config) *AuthService { return &AuthService{apiKey: cfg.APIKey} }
+        func (s *AuthService) IsAPIKeyValid(key string) bool { return key == s.apiKey }
+
+        // router/router.go (фрагмент)
+        import ( "net/http"; "github.com/go-chi/chi/v5"; "your_module_name/services" )
+        func AuthMiddleware(authService *services.AuthService) func(next http.Handler) http.Handler {
+            return func(next http.Handler) http.Handler {
+                return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                    apiKey := r.Header.Get("X-API-Key")
+                    if !authService.IsAPIKeyValid(apiKey) {
+                        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+                        return
+                    }
+                    next.ServeHTTP(w, r)
+                })
+            }
+        }
+        // В NewRouter:
+        // authService := services.NewAuthService(cfg)
+        // r.Group(func(r chi.Router) { r.Use(AuthMiddleware(authService)); /* protected routes */ })
+        ```
+    *   **Цель задачи:** Защитить API от несанкционированного доступа.
+    *   **Входные данные:** `API_KEY` в `.env`.
+    *   **Выходные данные/Ожидаемый результат:** Запросы без валидного API-ключа получают 401 Unauthorized.
+*   **Критерии Приемки:**
+    *   Запрос к защищенному эндпоинту без `X-API-Key` возвращает 401.
+    *   Запрос к защищенному эндпоинту с корректным `X-API-Key` возвращает 200.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `chi.Middleware` для создания middleware.
+    *   API-ключ должен быть простой строкой на этом этапе.
+*   **Связанные Артефакты:** FT-USER.1, NFT-SEC.1.
+*   **<<<Окончание задачи>>> 1.4.0**
+
+### 3.2. Фаза 2: Разработка Core-функционала (Бэкенд)
+
+**>>>ЗАДАЧА<<< 2.1.0: Реализация CRUD для Функциональных Блоков**
+*   **Статус:** Ожидание
+*   **Зависимости:** 1.2.0, 1.3.0, 1.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.FunctionalBlock` (id, name, prefix, created_at, updated_at).
+        *   Реализовать `repositories.FunctionalBlockRepository` с методами `Create`, `GetByID`, `GetAll`, `Update`, `Delete`, `GetByPrefix`.
+        *   Реализовать `services.FunctionalBlockService` с методами `CreateFunctionalBlock`, `GetFunctionalBlockByID`, `GetAllFunctionalBlocks`, `UpdateFunctionalBlock`, `DeleteFunctionalBlock`. В сервисе добавить валидацию уникальности префикса и его формата (не более 6 латинских букв, только латинские буквы).
+        *   Реализовать `handlers.FunctionalBlockHandler` с HTTP-методами для CRUD-операций.
+        *   Зарегистрировать маршруты в `router/router.go`: `GET /api/v1/functional-blocks`, `POST /api/v1/functional-blocks`, `GET /api/v1/functional-blocks/{id}`, `PUT /api/v1/functional-blocks/{id}`, `DELETE /api/v1/functional-blocks/{id}`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`functional_blocks`).
+    *   **Примеры кода:**
+        ```go
+        // models/functional_block.go
+        package models
+        import "time"
+        type FunctionalBlock struct {
+            ID        string    `json:"id" db:"id"`
+            Name      string    `json:"name" db:"name"`
+            Prefix    string    `json:"prefix" db:"prefix"`
+            CreatedAt time.Time `json:"createdAt" db:"created_at"`
+            UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+        }
+
+        // repositories/functional_block_repo.go
+        package repositories
+        import ( "context"; "github.com/jackc/pgx/v5/pgxpool"; "your_module_name/models" )
+        type FunctionalBlockRepository struct { db *pgxpool.Pool }
+        func NewFunctionalBlockRepository(db *pgxpool.Pool) *FunctionalBlockRepository { return &FunctionalBlockRepository{db: db} }
+        func (r *FunctionalBlockRepository) Create(ctx context.Context, fb *models.FunctionalBlock) error {
+            query := `INSERT INTO functional_blocks (name, prefix) VALUES ($1, $2) RETURNING id, created_at, updated_at`
+            return r.db.QueryRow(ctx, query, fb.Name, fb.Prefix).Scan(&fb.ID, &fb.CreatedAt, &fb.UpdatedAt)
+        }
+        func (r *FunctionalBlockRepository) GetByID(ctx context.Context, id string) (*models.FunctionalBlock, error) { /* ... */ }
+        func (r *FunctionalBlockRepository) GetByPrefix(ctx context.Context, prefix string) (*models.FunctionalBlock, error) { /* ... */ }
+        func (r *FunctionalBlockRepository) GetAll(ctx context.Context) ([]models.FunctionalBlock, error) { /* ... */ }
+        func (r *FunctionalBlockRepository) Update(ctx context.Context, fb *models.FunctionalBlock) error { /* ... */ }
+        func (r *FunctionalBlockRepository) Delete(ctx context.Context, id string) error { /* ... */ }
+
+        // services/functional_block_service.go
+        package services
+        import ( "context"; "errors"; "regexp"; "your_module_name/models"; "your_module_name/repositories" )
+        var prefixRegex = regexp.MustCompile(`^[A-Z]{1,6}$`)
+        type FunctionalBlockService struct { repo *repositories.FunctionalBlockRepository }
+        func NewFunctionalBlockService(repo *repositories.FunctionalBlockRepository) *FunctionalBlockService { return &FunctionalBlockService{repo: repo} }
+        func (s *FunctionalBlockService) CreateFunctionalBlock(ctx context.Context, fb *models.FunctionalBlock) error {
+            if !prefixRegex.MatchString(fb.Prefix) { return errors.New("prefix must be 1-6 uppercase Latin letters") }
+            existing, _ := s.repo.GetByPrefix(ctx, fb.Prefix)
+            if existing != nil { return errors.New("prefix already exists") }
+            return s.repo.Create(ctx, fb)
+        }
+        // ... другие методы
+
+        // handlers/functional_block_handler.go
+        package handlers
+        import ( "net/http"; "encoding/json"; "github.com/go-chi/chi/v5"; "your_module_name/models"; "your_module_name/services" )
+        type FunctionalBlockHandler struct { service *services.FunctionalBlockService }
+        func NewFunctionalBlockHandler(service *services.FunctionalBlockService) *FunctionalBlockHandler { return &FunctionalBlockHandler{service: service} }
+        func (h *FunctionalBlockHandler) CreateFunctionalBlock(w http.ResponseWriter, r *http.Request) {
+            var fb models.FunctionalBlock
+            if err := json.NewDecoder(r.Body).Decode(&fb); err != nil { http.Error(w, err.Error(), http.StatusBadRequest); return }
+            if err := h.service.CreateFunctionalBlock(r.Context(), &fb); err != nil { http.Error(w, err.Error(), http.StatusInternalServerError); return }
+            w.WriteHeader(http.StatusCreated); json.NewEncoder(w).Encode(fb)
+        }
+        // ... другие HTTP-методы
+        ```
+    *   **Цель задачи:** Обеспечить полный CRUD функционал для управления функциональными блоками через API.
+    *   **Входные данные:** JSON-объекты функциональных блоков.
+    *   **Выходные данные/Ожидаемый результат:** Успешное создание, чтение, обновление, удаление функциональных блоков через API.
+*   **Критерии Приемки:**
+    *   API-эндпоинты для функциональных блоков доступны и отвечают 200 OK/201 Created.
+    *   Создание блока с невалидным префиксом (длина, символы) или неуникальным префиксом возвращает 400 Bad Request.
+    *   Удаление блока успешно удаляет его из БД.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `json.Unmarshal` и `json.Marshal` для работы с JSON.
+    *   Реализовать валидацию префикса с помощью регулярных выражений.
+    *   Обработать `sql.ErrNoRows` для `GetByID` как 404 Not Found.
+*   **Связанные Артефакты:** FT-FUNCBLOCK.1-5, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.1.0**
+
+**>>>ЗАДАЧА<<< 2.2.0: Реализация CRUD для Проектов**
+*   **Статус:** Ожидание
+*   **Зависимости:** 1.2.0, 1.3.0, 1.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.Project` (id, name, description, status, created_at, updated_at).
+        *   Реализовать `repositories.ProjectRepository` с методами `Create`, `GetByID`, `GetAll`, `Update`, `Delete`.
+        *   Реализовать `services.ProjectService` с методами `CreateProject`, `GetProjectByID`, `GetAllProjects`, `UpdateProject`, `DeleteProject`.
+        *   Реализовать `handlers.ProjectHandler` с HTTP-методами для CRUD-операций.
+        *   Зарегистрировать маршруты в `router/router.go`: `GET /api/v1/projects`, `POST /api/v1/projects`, `GET /api/v1/projects/{id}`, `PUT /api/v1/projects/{id}`, `DELETE /api/v1/projects/{id}`.
+        *   При удалении проекта, обеспечить каскадное удаление связанных задач, комментариев, документов, логов операций и записей плана разработки (через `ON DELETE CASCADE` в схеме БД).
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`projects`).
+    *   **Примеры кода:** Аналогично 2.1.0, но для сущности Project.
+    *   **Цель задачи:** Обеспечить полный CRUD функционал для управления проектами через API.
+    *   **Входные данные:** JSON-объекты проектов.
+    *   **Выходные данные/Ожидаемый результат:** Успешное создание, чтение, обновление, удаление проектов через API.
+*   **Критерии Приемки:**
+    *   API-эндпоинты для проектов доступны и отвечают 200 OK/201 Created.
+    *   Удаление проекта успешно удаляет его и все связанные сущности из БД.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `ON DELETE CASCADE` в схеме БД для связей с `projects`.
+*   **Связанные Артефакты:** FT-PROJ.1-5, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.2.0**
+
+**>>>ЗАДАЧА<<< 2.3.0: Реализация CRUD для Задач (без комментариев и логов)**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.1.0, 2.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.Task` (id, project_id, functional_block_id, number, title, description, status, priority, type, role, result, parent_task_id, created_at, updated_at).
+        *   Реализовать `repositories.TaskRepository` с методами `Create`, `GetByID`, `GetByProjectID`, `Update`, `Delete`, `GetNextGlobalTaskNumber`.
+        *   Реализовать `services.TaskService` с методами `CreateTask`, `GetTaskByID`, `GetTasksByProjectID`, `UpdateTask`, `DeleteTask`, `CopyTask`.
+        *   **Автоматическая нумерация:** В `CreateTask` сервиса:
+            *   Получить префикс функционального блока по `functional_block_id` (через `FunctionalBlockService`).
+            *   Атомарно получить следующий глобальный инкрементный счетчик из таблицы `task_number_sequence`.
+            *   Сформировать полный номер задачи: `ПРЕФИКС-ГЛОБАЛЬНЫЙ_НОМЕР`.
+            *   Установить статус новой задачи в "Новая".
+        *   **Валидация:**
+            *   `title`, `description`, `project_id` обязательны.
+            *   `status`, `priority`, `type` должны быть из предопределенных списков (FT-TASK.6).
+            *   Поля `title` и `description` **нельзя редактировать**, если статус задачи не "Новая".
+            *   Поле `number` **нельзя редактировать** после создания.
+            *   Удаление задачи разрешено **только в статусе "Новая"**.
+            *   При создании задачи типа "Дефект", `parent_task_id` должен быть валидным ID существующей задачи.
+            *   Поле `result` должно быть заполнено, если статус меняется на конечный (`Done`, `Fixed`, `Closed`).
+        *   **Копирование задачи:** Метод `CopyTask` должен создать новую задачу с новым уникальным номером, скопировать все поля кроме `id`, `number`, `created_at`, `updated_at`, `result`, `parent_task_id` (установить в NULL), и установить статус в "Новая".
+        *   Реализовать `handlers.TaskHandler` с HTTP-методами для CRUD-операций.
+        *   Зарегистрировать маршруты в `router/router.go`: `GET /api/v1/projects/{id}/tasks`, `POST /api/v1/projects/{id}/tasks`, `GET /api/v1/tasks/{id}`, `PUT /api/v1/tasks/{id}`, `DELETE /api/v1/tasks/{id}`, `POST /api/v1/tasks/{id}/copy`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`tasks`).
+    *   **Примеры кода:**
+        ```go
+        // services/task_service.go (фрагмент)
+        package services
+        import (
+            "context"; "errors"; "fmt"; "your_module_name/models"; "your_module_name/repositories"
+        )
+        type TaskService struct {
+            taskRepo *repositories.TaskRepository
+            functionalBlockRepo *repositories.FunctionalBlockRepository
+            // ... другие репозитории
+        }
+        func NewTaskService(tr *repositories.TaskRepository, fbr *repositories.FunctionalBlockRepository) *TaskService {
+            return &TaskService{taskRepo: tr, functionalBlockRepo: fbr}
+        }
+        func (s *TaskService) CreateTask(ctx context.Context, task *models.Task) error {
+            if task.FunctionalBlockID != "" {
+                fb, err := s.functionalBlockRepo.GetByID(ctx, task.FunctionalBlockID)
+                if err != nil { return fmt.Errorf("functional block not found: %w", err) }
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx) // Атомарное получение номера
+                if err != nil { return fmt.Errorf("failed to get next task number: %w", err) }
+                task.Number = fmt.Sprintf("%s-%d", fb.Prefix, nextNum)
+            } else {
+                // Если нет функционального блока, можно использовать дефолтный префикс или просто номер
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx)
+                if err != nil { return fmt.Errorf("failed to get next task number: %w", err) }
+                task.Number = fmt.Sprintf("%d", nextNum)
+            }
+            task.Status = "Новая" // Изначальный статус
+            // ... валидация других полей
+            return s.taskRepo.Create(ctx, task)
+        }
+        func (s *TaskService) UpdateTask(ctx context.Context, task *models.Task) error {
+            existingTask, err := s.taskRepo.GetByID(ctx, task.ID)
+            if err != nil { return err }
+            if existingTask.Status != "Новая" {
+                task.Title = existingTask.Title // Запрет на изменение названия
+                task.Description = existingTask.Description // Запрет на изменение описания
+            }
+            if task.Number != existingTask.Number { return errors.New("task number cannot be changed") } // Запрет на изменение номера
+            // Валидация result для конечных статусов
+            if (task.Status == "Done" || task.Status == "Fixed" || task.Status == "Closed") && task.Result == "" {
+                return errors.New("result is required for final status")
+            }
+            // ... валидация статусов, приоритетов, типов
+            return s.taskRepo.Update(ctx, task)
+        }
+        func (s *TaskService) DeleteTask(ctx context.Context, id string) error {
+            task, err := s.taskRepo.GetByID(ctx, id)
+            if err != nil { return err }
+            if task.Status != "Новая" { return errors.New("can only delete tasks in 'Новая' status") }
+            return s.taskRepo.Delete(ctx, id)
+        }
+        func (s *TaskService) CopyTask(ctx context.Context, originalTaskID string) (*models.Task, error) {
+            originalTask, err := s.taskRepo.GetByID(ctx, originalTaskID)
+            if err != nil { return nil, err }
+            newTask := *originalTask // Копируем все поля
+            newTask.ID = "" // UUID будет сгенерирован БД
+            newTask.Result = ""
+            newTask.ParentTaskID = "" // Новая задача не является дефектом
+            newTask.Status = "Новая"
+            // Генерируем новый номер для скопированной задачи
+            if newTask.FunctionalBlockID != "" {
+                fb, err := s.functionalBlockRepo.GetByID(ctx, newTask.FunctionalBlockID)
+                if err != nil { return nil, fmt.Errorf("functional block not found for copy: %w", err) }
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx)
+                if err != nil { return nil, fmt.Errorf("failed to get next task number for copy: %w", err) }
+                newTask.Number = fmt.Sprintf("%s-%d", fb.Prefix, nextNum)
+            } else {
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx)
+                if err != nil { return nil, fmt.Errorf("failed to get next task number for copy: %w", err) }
+                newTask.Number = fmt.Sprintf("%d", nextNum)
+            }
+            return &newTask, s.taskRepo.Create(ctx, &newTask)
+        }
+        ```
+        ```go
+        // repositories/task_repo.go (фрагмент)
+        package repositories
+        import ( "context"; "github.com/jackc/pgx/v5/pgxpool" )
+        // ...
+        func (r *TaskRepository) GetNextGlobalTaskNumber(ctx context.Context) (int64, error) {
+            var nextNum int64
+            tx, err := r.db.Begin(ctx)
+            if err != nil { return 0, err }
+            defer tx.Rollback(ctx) // Rollback on error
+
+            _, err = tx.Exec(ctx, "LOCK TABLE task_number_sequence IN EXCLUSIVE MODE") // Блокируем таблицу
+            if err != nil { return 0, err }
+
+            err = tx.QueryRow(ctx, "UPDATE task_number_sequence SET current_value = current_value + 1 WHERE id = 1 RETURNING current_value").Scan(&nextNum)
+            if err != nil { return 0, err }
+
+            return nextNum, tx.Commit(ctx)
+        }
+        ```
+    *   **Цель задачи:** Обеспечить полный CRUD функционал для управления задачами, включая автоматическую нумерацию, валидацию и копирование.
+    *   **Входные данные:** JSON-объекты задач.
+    *   **Выходные данные/Ожидаемый результат:** Успешное создание, чтение, обновление, удаление, копирование задач через API.
+*   **Критерии Приемки:**
+    *   Создание задачи генерирует уникальный номер с правильным префиксом.
+    *   Попытка изменить название/описание задачи не в статусе "Новая" возвращает ошибку.
+    *   Попытка удалить задачу не в статусе "Новая" возвращает ошибку.
+    *   Копирование задачи создает новую задачу с новым номером и статусом "Новая".
+    *   Поле "Результат" становится обязательным при изменении статуса на конечный.
+    *   Попытка изменить номер задачи возвращает ошибку.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   Использовать транзакции для операций, требующих нескольких шагов (например, генерация номера).
+    *   Реализовать логику `GetNextGlobalTaskNumber` в репозитории, которая будет атомарно получать следующий номер.
+*   **Связанные Артефакты:** FT-TASK.1-9, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.3.0**
+
+**>>>ЗАДАЧА<<< 2.4.0: Реализация Комментариев и Логирования Операций**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.3.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.Comment` (id, task_id, user_identifier, content, created_at).
+        *   Определить `models.OperationLog` (id, task_id, user_identifier, operation_type, details JSONB, created_at).
+        *   Реализовать `repositories.CommentRepository` с методами `Create`, `GetByTaskID`, `Delete`.
+        *   Реализовать `repositories.OperationLogRepository` с методом `Create`.
+        *   В `services.TaskService` добавить логику для автоматического создания `OperationLog` при изменении статуса, приоритета, типа, роли задачи.
+        *   Реализовать `services.CommentService` с методами `AddComment`, `GetCommentsByTaskID`.
+        *   Реализовать `handlers.CommentHandler` с HTTP-методами для добавления и получения комментариев.
+        *   Реализовать `handlers.TaskHandler` для получения логов операций по задаче.
+        *   Зарегистрировать маршруты: `GET /api/v1/tasks/{id}/comments`, `POST /api/v1/tasks/{id}/comments`, `DELETE /api/v1/comments/{id}`, `GET /api/v1/tasks/{id}/logs`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`comments`, `operation_logs`).
+    *   **Примеры кода:**
+        ```go
+        // services/task_service.go (фрагмент)
+        func (s *TaskService) UpdateTask(ctx context.Context, task *models.Task) error {
+            existingTask, err := s.taskRepo.GetByID(ctx, task.ID)
+            if err != nil { return err }
+            // ... валидация и обновление задачи
+            if existingTask.Status != task.Status {
+                logEntry := &models.OperationLog{
+                    TaskID: task.ID,
+                    UserIdentifier: "Система", // Или из контекста аутентификации
+                    OperationType: "status_change",
+                    Details: map[string]string{"old_status": existingTask.Status, "new_status": task.Status},
+                }
+                s.operationLogRepo.Create(ctx, logEntry)
+            }
+            // ... аналогично для других полей
+            return s.taskRepo.Update(ctx, task)
+        }
+        ```
+    *   **Цель задачи:** Обеспечить функционал комментариев и автоматического логирования операций для задач.
+    *   **Входные данные:** Текст комментария, данные об изменении задачи.
+    *   **Выходные данные/Ожидаемый результат:** Комментарии и логи операций успешно сохраняются и доступны через API.
+*   **Критерии Приемки:**
+    *   Добавленный комментарий отображается в списке комментариев задачи.
+    *   Изменение статуса задачи создает запись в логе операций.
+    *   Логи операций содержат корректные детали изменений.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `JSONB` тип для поля `details` в `operation_logs`.
+    *   Обеспечить передачу `user_identifier` из контекста запроса.
+*   **Связанные Артефакты:** FT-TASK.7, FT-COMMENT.1-5.
+*   **<<<Окончание задачи>>> 2.4.0**
+
+**>>>ЗАДАЧА<<< 2.5.0: Реализация CRUD для Документов**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.Document` (id, project_id, type, title, content, agent_editable, created_at, updated_at).
+        *   Реализовать `repositories.DocumentRepository` с методами `Create`, `GetByID`, `GetByProjectID`, `Update`, `Delete`.
+        *   Реализовать `services.DocumentService` с методами `CreateDocument`, `GetDocumentByID`, `GetDocumentsByProjectID`, `UpdateDocument`, `DeleteDocument`.
+        *   Реализовать `handlers.DocumentHandler` с HTTP-методами для CRUD-операций.
+        *   Зарегистрировать маршруты в `router/router.go`: `GET /api/v1/projects/{id}/documents`, `POST /api/v1/projects/{id}/documents`, `GET /api/v1/documents/{id}`, `PUT /api/v1/documents/{id}`, `DELETE /api/v1/documents/{id}`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`documents`).
+    *   **Примеры кода:** Аналогично 2.1.0, но для сущности Document.
+    *   **Цель задачи:** Обеспечить полный CRUD функционал для управления документами через API.
+    *   **Входные данные:** JSON-объекты документов.
+    *   **Выходные данные/Ожидаемый результат:** Успешное создание, чтение, обновление, удаление документов через API.
+*   **Критерии Приемки:**
+    *   API-эндпоинты для документов доступны и отвечают 200 OK/201 Created.
+    *   Документы сохраняются с корректным типом и флагом `agent_editable`.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   Валидация поля `type` на соответствие предопределенным значениям (BRD, SAD, AI-Ready, AI Executable).
+*   **Связанные Артефакты:** FT-DOC.1-8, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.5.0**
+
+**>>>ЗАДАЧА<<< 2.6.0: Реализация Управления Планом Разработки**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0, 2.3.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.ProjectPlanSequence` (id, project_id, task_id, sequence_order, created_at, updated_at).
+        *   Реализовать `repositories.ProjectPlanRepository` с методами `SavePlanSequence` (для сохранения/обновления порядка задач), `GetPlanSequenceByProjectID`, `DeletePlanSequenceByProjectID`.
+        *   Реализовать `services.ProjectPlanService` с методами `UpdateProjectPlan` (принимает список `task_id` в нужном порядке), `GetProjectPlan`, `GetNextTaskInPlan`.
+        *   Метод `GetNextTaskInPlan` должен:
+            *   Получить текущий план для проекта.
+            *   Итерировать по задачам в плане, проверяя их статус.
+            *   Вернуть первую задачу, которая находится в статусе "To Do", "In Progress" или "Blocked".
+        *   Реализовать `handlers.ProjectPlanHandler` с HTTP-методами для получения и обновления плана.
+        *   Зарегистрировать маршруты: `GET /api/v1/projects/{id}/plan`, `PUT /api/v1/projects/{id}/plan`, `GET /api/v1/projects/{id}/plan/next-task`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`project_plan_sequences`).
+    *   **Примеры кода:**
+        ```go
+        // services/project_plan_service.go (фрагмент)
+        package services
+        import ( "context"; "sort"; "your_module_name/models"; "your_module_name/repositories" )
+        type ProjectPlanService struct {
+            repo *repositories.ProjectPlanRepository
+            taskRepo *repositories.TaskRepository
+        }
+        func NewProjectPlanService(r *repositories.ProjectPlanRepository, tr *repositories.TaskRepository) *ProjectPlanService {
+            return &ProjectPlanService{repo: r, taskRepo: tr}
+        }
+        func (s *ProjectPlanService) UpdateProjectPlan(ctx context.Context, projectID string, taskIDs []string) error {
+            // Удалить старый план
+            if err := s.repo.DeletePlanSequenceByProjectID(ctx, projectID); err != nil { return err }
+            // Сохранить новый план
+            for i, taskID := range taskIDs {
+                planEntry := &models.ProjectPlanSequence{
+                    ProjectID: projectID,
+                    TaskID: taskID,
+                    SequenceOrder: i + 1,
+                }
+                if err := s.repo.SavePlanSequence(ctx, planEntry); err != nil { return err }
+            }
+            return nil
+        }
+        func (s *ProjectPlanService) GetProjectPlan(ctx context.Context, projectID string) ([]models.Task, error) {
+            planEntries, err := s.repo.GetPlanSequenceByProjectID(ctx, projectID)
+            if err != nil { return nil, err }
+            sort.Slice(planEntries, func(i, j int) bool { return planEntries[i].SequenceOrder < planEntries[j].SequenceOrder })
+
+            var tasks []models.Task
+            for _, entry := range planEntries {
+                task, err := s.taskRepo.GetByID(ctx, entry.TaskID)
+                if err == nil { // Пропустить, если задача не найдена (удалена)
+                    tasks = append(tasks, *task)
+                }
+            }
+            return tasks, nil
+        }
+        func (s *ProjectPlanService) GetNextTaskInPlan(ctx context.Context, projectID string) (*models.Task, error) {
+            planEntries, err := s.repo.GetPlanSequenceByProjectID(ctx, projectID)
+            if err != nil { return nil, err }
+            sort.Slice(planEntries, func(i, j int) bool { return planEntries[i].SequenceOrder < planEntries[j].SequenceOrder })
+
+            for _, planEntry := range planEntries {
+                task, err := s.taskRepo.GetByID(ctx, planEntry.TaskID)
+                if err != nil { continue } // Пропустить удаленные задачи
+                if task.Status == "To Do" || task.Status == "In Progress" || task.Status == "Blocked" {
+                    return task, nil
+                }
+            }
+            return nil, nil // Нет следующей задачи
+        }
+        ```
+    *   **Цель задачи:** Обеспечить возможность определения и получения последовательности выполнения задач в проекте.
+    *   **Входные данные:** Список UUID задач в желаемом порядке.
+    *   **Выходные данные/Ожидаемый результат:** План успешно сохраняется, можно получить следующую задачу по плану.
+*   **Критерии Приемки:**
+    *   План сохраняется и извлекается в правильном порядке.
+    *   `GetNextTaskInPlan` корректно определяет следующую задачу в соответствии со статусами.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   При обновлении плана, сначала удалить все старые записи для проекта, затем вставить новые.
+*   **Связанные Артефакты:** FT-PLAN.1-3, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.6.0**
+
+### 3.3. Фаза 3: Разработка Веб-интерфейса (Frontend)
+
+**>>>ЗАДАЧА<<< 3.1.0: Инициализация Frontend-проекта и базовой структуры**
+*   **Статус:** Ожидание
+*   **Зависимости:** Нет
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать новый React-проект (или Vue/Angular) с помощью `create-react-app` или `Vite`. Настроить базовую структуру каталогов (`components`, `pages`, `services`, `styles`, `utils`). Создать `App.js/tsx` и `index.js/tsx`.
+    *   **Схемы/диаграммы:** См. 2.2. Логическая Архитектура (Структура каталогов Frontend).
+    *   **Примеры кода:**
+        ```javascript
+        // src/App.js
+        import React from 'react';
+        function App() { return (<div>Project Manager Frontend</div>); }
+        export default App;
+        ```
+    *   **Цель задачи:** Подготовить базовую структуру Frontend-проекта.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** Созданный проект, который запускается и отображает базовый текст.
+*   **Критерии Приемки:**
+    *   `package.json` существует.
+    *   Все указанные каталоги созданы.
+    *   Проект компилируется и запускается без ошибок.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `npx create-react-app my-app` или `npm create vite@latest`.
+*   **Связанные Артефакты:** 2.2. Логическая Архитектура (Структура каталогов Frontend).
+*   **<<<Окончание задачи>>> 3.1.0**
+
+**>>>ЗАДАЧА<<< 3.2.0: Реализация сквозной панели навигации и базового роутинга**
+*   **Статус:** Ожидание
+*   **Зависимости:** 3.1.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать компонент `Header` в `components/Header.js/tsx`, содержащий ссылки на "Проекты", "Задачи", "Документация", "Справка", "Настройки". Интегрировать его в `App.js/tsx`. Настроить роутинг для перехода между страницами (например, `/projects`, `/tasks`, `/documents`).
+    *   **Схемы/диаграммы:**
+        ```
+        +-------------------------------------------------+
+        | [Проекты] [Задачи] [Документация] [Справка] [Настройки] |
+        +-------------------------------------------------+
+        |                                                 |
+        |               Содержимое страницы               |
+        |                                                 |
+        +-------------------------------------------------+
+        ```
+    *   **Примеры кода:**
+        ```javascript
+        // src/components/Header.js
+        import React from 'react';
+        import { Link } from 'react-router-dom'; // Предполагается react-router-dom
+        function Header() {
+            return (
+                <nav>
+                    <Link to="/projects">Проекты</Link>
+                    <Link to="/tasks">Задачи</Link>
+                    {/* ... другие ссылки */}
+                </nav>
+            );
+        }
+        export default Header;
+        ```
+    *   **Цель задачи:** Обеспечить базовую навигацию по приложению.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** Панель навигации отображается на всех страницах, ссылки работают.
+*   **Критерии Приемки:**
+    *   Панель навигации присутствует на всех страницах.
+    *   Переходы по ссылкам навигации корректно меняют отображаемую страницу.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `react-router-dom` (для React) или аналогичные библиотеки для других фреймворков.
+*   **Связанные Артефакты:** FT-WEB.1, FT-WEB.6.
+*   **<<<Окончание задачи>>> 3.2.0**
+
+**>>>ЗАДАЧА<<< 3.3.0: Реализация страниц CRUD для Функциональных Блоков**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.1.0, 3.2.0
+*   **Приоритет:** Средний
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать страницу `FunctionalBlocksPage` для отображения списка функциональных блоков в таблице. Реализовать формы для создания и редактирования функциональных блоков. Интегрировать API-клиент для взаимодействия с Go-бэкендом.
+    *   **Схемы/диаграммы:**
+        ```
+        [FunctionalBlocksPage]
+        +---------------------------------+
+        | Заголовок: Функциональные Блоки |
+        |                                 |
+        | [Кнопка: Создать Блок]          |
+        |                                 |
+        | Таблица:                        |
+        | +----+----------+---------+----+
+        | | ID | Название | Префикс | Действия |
+        | +----+----------+---------+----+
+        | | .. | ..       | ..      | [Ред][Уд] |
+        | +----+----------+---------+----+
+        +---------------------------------+
+        ```
+    *   **Примеры кода:**
+        ```javascript
+        // src/pages/FunctionalBlocksPage.js
+        import React, { useState, useEffect } from 'react';
+        import { getFunctionalBlocks, createFunctionalBlock, updateFunctionalBlock, deleteFunctionalBlock } from '../services/functionalBlockService';
+        function FunctionalBlocksPage() {
+            const [blocks, setBlocks] = useState([]);
+            useEffect(() => {
+                getFunctionalBlocks().then(setBlocks);
+            }, []);
+            // ... логика для форм и кнопок
+            return (/* JSX для таблицы и форм */);
+        }
+        export default FunctionalBlocksPage;
+        ```
+    *   **Цель задачи:** Предоставить Пользователю UI для управления функциональными блоками.
+    *   **Входные данные:** Данные функциональных блоков.
+    *   **Выходные данные/Ожидаемый результат:** Пользователь может создавать, просматривать, редактировать, удалять функциональные блоки через веб-интерфейс.
+*   **Критерии Приемки:**
+    *   Все операции CRUD для функциональных блоков работают корректно через UI.
+    *   Валидация префикса отображается в UI.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `fetch` или `axios` для HTTP-запросов.
+    *   Обеспечить обработку ошибок и отображение сообщений пользователю.
+*   **Связанные Артефакты:** FT-FUNCBLOCK.1-5, FT-WEB.2, FT-WEB.3.
+*   **<<<Окончание задачи>>> 3.3.0**
+
+**>>>ЗАДАЧА<<< 3.4.0: Реализация страниц CRUD для Проектов**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0, 3.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать страницу `ProjectsPage` для отображения списка проектов. Создать страницу `ProjectDetailsPage` для просмотра деталей проекта, включая списки задач и документов. Реализовать формы для создания и редактирования проектов.
+    *   **Схемы/диаграммы:** См. FT-WEB.2, FT-WEB.3.
+    *   **Примеры кода:** Аналогично 3.3.0, но для сущности Project.
+    *   **Цель задачи:** Предоставить Пользователю UI для управления проектами.
+    *   **Входные данные:** Данные проектов.
+    *   **Выходные данные/Ожидаемый результат:** Пользователь может создавать, просматривать, редактировать, удалять проекты через веб-интерфейс.
+*   **Критерии Приемки:**
+    *   Все операции CRUD для проектов работают корректно через UI.
+    *   При удалении проекта, Пользователь получает предупреждение о каскадном удалении.
+*   **Технические Детали/Инструкции:**
+    *   Использовать компоненты для таблиц и форм.
+*   **Связанные Артефакты:** FT-PROJ.1-5, FT-WEB.2, FT-WEB.3.
+*   **<<<Окончание задачи>>> 3.4.0**
+
+**>>>ЗАДАЧА<<< 3.5.0: Реализация страниц CRUD для Задач**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.3.0, 3.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать страницу `TaskDetailsPage` для просмотра и редактирования задач. Реализовать формы для создания и редактирования задач. Обеспечить отображение полей: Номер, Название, Описание, Статус, Приоритет, Тип, Роль, Функциональный блок, Результат. Реализовать функционал копирования задачи.
+    *   **Схемы/диаграммы:** См. FT-WEB.4.
+    *   **Примеры кода:** Аналогично 3.3.0, но для сущности Task.
+    *   **Цель задачи:** Предоставить Пользователю UI для управления задачами.
+    *   **Входные данные:** Данные задач.
+    *   **Выходные данные/Ожидаемый результат:** Пользователь может создавать, просматривать, редактировать, удалять, копировать задачи через веб-интерфейс.
+*   **Критерии Приемки:**
+    *   Все операции CRUD для задач работают корректно через UI.
+    *   Поля "Название" и "Описание" становятся нередактируемыми, если статус задачи не "Новая".
+    *   Удаление задачи разрешено только в статусе "Новая".
+    *   Копирование задачи создает новую задачу с новым номером и статусом "Новая".
+    *   Поле "Результат" становится обязательным при изменении статуса на конечный.
+*   **Технические Детали/Инструкции:**
+    *   Использовать выпадающие списки для статусов, приоритетов, типов, ролей, функциональных блоков.
+    *   Реализовать условное отображение/доступность полей.
+*   **Связанные Артефакты:** FT-TASK.1-9, FT-WEB.4.
+*   **<<<Окончание задачи>>> 3.5.0**
+
+**>>>ЗАДАЧА<<< 3.6.0: Реализация отображения Комментариев и Логирования Операций**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.4.0, 3.5.0
+*   **Приоритет:** Средний
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** На странице `TaskDetailsPage` добавить секции для отображения списка комментариев и логов операций. Реализовать форму для добавления нового комментария. Обеспечить отображение `user_identifier` и временной метки для комментариев и логов.
+    *   **Схемы/диаграммы:** См. FT-WEB.4.
+    *   **Примеры кода:**
+        ```javascript
+        // src/pages/TaskDetailsPage.js (фрагмент)
+        // ...
+        <section>
+            <h3>Комментарии</h3>
+            {comments.map(comment => (
+                <div key={comment.id}>
+                    <strong>{comment.userIdentifier}</strong> ({new Date(comment.createdAt).toLocaleString()}): {comment.content}
+                </div>
+            ))}
+            <textarea value={newComment} onChange={e => setNewComment(e.target.value)} />
+            <button onClick={handleAddComment}>Добавить комментарий</button>
+        </section>
+        <section>
+            <h3>Лог операций</h3>
+            {logs.map(log => (
+                <div key={log.id}>
+                    <strong>{log.userIdentifier}</strong> ({new Date(log.createdAt).toLocaleString()}): {log.operationType} - {JSON.stringify(log.details)}
+                </div>
+            ))}
+        </section>
+        ```
+    *   **Цель задачи:** Предоставить Пользователю UI для просмотра комментариев и истории изменений задачи.
+    *   **Входные данные:** Данные комментариев и логов операций.
+    *   **Выходные данные/Ожидаемый результат:** Комментарии и логи отображаются корректно, Пользователь может добавлять новые комментарии.
+*   **Критерии Приемки:**
+    *   Добавленный комментарий отображается в списке комментариев задачи.
+    *   Изменение статуса задачи создает запись в логе операций.
+    *   Логи операций содержат корректные детали изменений.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `toLocaleString()` для форматирования даты/времени.
+*   **Связанные Артефакты:** FT-COMMENT.1-5, FT-TASK.7, FT-WEB.4.
+*   **<<<Окончание задачи>>> 3.6.0**
+
+**>>>ЗАДАЧА<<< 3.7.0: Реализация страниц CRUD для Документов**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.5.0, 3.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать страницу `DocumentDetailsPage` для просмотра и редактирования документов. Обеспечить отображение полей: Заголовок, Тип, Флаг "Изменяемый агентом", и поле для содержания документа. Реализовать форму для создания и редактирования документов.
+    *   **Подсветка синтаксиса JSON:** Для поля содержания документа использовать библиотеку для подсветки синтаксиса JSON (например, `react-syntax-highlighter` или `CodeMirror` с соответствующим режимом).
+    *   **Схемы/диаграммы:** См. FT-WEB.5.
+    *   **Примеры кода:** Аналогично 3.3.0, но для сущности Document.
+    *   **Цель задачи:** Предоставить Пользователю UI для управления документами.
+    *   **Входные данные:** Данды документов.
+    *   **Выходные данные/Ожидаемый результат:** Пользователь может создавать, просматривать, редактировать, удалять документы через веб-интерфейс. Содержание JSON-документов отображается с подсветкой синтаксиса.
+*   **Критерии Приемки:**
+    *   Все операции CRUD для документов работают корректно через UI.
+    *   JSON-содержание документа отображается с подсветкой синтаксиса.
+    *   Флаг "Изменяемый агентом" корректно отображается и может быть изменен.
+*   **Технические Детали/Инструкции:**
+    *   Выбрать подходящую библиотеку для подсветки синтаксиса JSON.
+    *   Обеспечить, что редактирование не нарушает подсветку.
+*   **Связанные Артефакты:** FT-DOC.1-8, FT-WEB.5.
+*   **<<<Окончание задачи>>> 3.7.0**
+
+**>>>ЗАДАЧА<<< 3.8.0: Реализация раздела "План Разработки"**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.6.0, 3.4.0, 3.5.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** На странице `ProjectDetailsPage` добавить раздел "План разработки". Отобразить список задач проекта в соответствии с их порядком в плане (FT-PLAN.1.1). Задачи типа "Дефект" не должны отображаться в плане. Реализовать возможность изменения порядка задач (например, drag-and-drop или кнопки "Вверх/Вниз"). Добавить кнопку "Рефакторинг плана", которая будет инициировать запрос к расширению IDE (см. FT-IDE.4.10). Реализовать отображение "следующей задачи" по плану.
+    *   **Схемы/диаграммы:** См. FT-WEB.3.
+    *   **Примеры кода:**
+        ```javascript
+        // src/pages/ProjectDetailsPage.js (фрагмент)
+        // ...
+        <section>
+            <h3>План разработки</h3>
+            {plan.map((task, index) => (
+                <div key={task.id}>
+                    {index + 1}. {task.number} - {task.title} ({task.status})
+                </div>
+            ))}
+            <button onClick={handleRefactorPlan}>Рефакторинг плана</button>
+            {nextTask && <p>Следующая задача: {nextTask.number} - {nextTask.title}</p>}
+        </section>
+        ```
+    *   **Цель задачи:** Предоставить Пользователю UI для управления планом разработки проекта.
+    *   **Входные данные:** Данные плана разработки и задач.
+    *   **Выходные данные/Ожидаемый результат:** План отображается, Пользователь может менять порядок задач, инициировать рефакторинг и видеть следующую задачу.
+*   **Критерии Приемки:**
+    *   План отображается корректно.
+    *   Изменение порядка задач в UI успешно сохраняется в БД.
+    *   Кнопка "Рефакторинг плана" вызывает соответствующую логику.
+    *   "Следующая задача" отображается корректно.
+    *   Задачи типа "Дефект" не отображаются в плане.
+*   **Технические Детали/Инструкции:**
+    *   Использовать библиотеку для drag-and-drop (например, `react-beautiful-dnd` для React) или реализовать кнопки для изменения порядка.
+*   **Связанные Артефакты:** FT-PLAN.1-3, FT-WEB.3.
+*   **<<<Окончание задачи>>> 3.8.0**
+
+**>>>ЗАДАЧА<<< 3.9.0: Реализация визуальных индикаторов и логирования Frontend**
+*   **Статус:** Ожидание
+*   **Зависимости:** 3.1.0
+*   **Приоритет:** Средний
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Применить стили для отображения цветных значков или выделения цветом для статусов и приоритетов задач. Добавить индикаторы загрузки для асинхронных операций. Реализовать логирование основных операций и ошибок в консоль браузера.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```javascript
+        // src/components/TaskItem.js (фрагмент)
+        function TaskItem({ task }) {
+            const statusColor = { "To Do": "blue", "In Progress": "orange", "Done": "green" }[task.status] || "gray";
+            return (
+                <div style={{ borderLeft: `5px solid ${statusColor}` }}>
+                    {task.title} ({task.status})
+                </div>
+            );
+        }
+
+        // src/services/api.js (фрагмент)
+        async function fetchData(url, options) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    console.error(`API Error: ${response.status} - ${await response.text()}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log(`API Success: ${url}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`API Request Failed: ${error.message}`);
+                throw error;
+            }
+        }
+        ```
+    *   **Цель задачи:** Улучшить читаемость UI и обеспечить базовое логирование на стороне клиента.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** UI становится более наглядным, в консоли браузера отображаются логи операций.
+*   **Критерии Приемки:**
+    *   Статусы и приоритеты задач визуально отличаются.
+    *   При выполнении асинхронных операций отображается индикатор загрузки.
+    *   В консоли браузера видны логи успешных операций и ошибок.
+*   **Технические Детали/Инструкции:**
+    *   Использовать CSS-классы или inline-стили для цветовой индикации.
+    *   Использовать `console.log`, `console.error` для логирования.
+*   **Связанные Артефакты:** FT-WEB.5, FT-WEB.7.
+*   **<<<Окончание задачи>>> 3.9.0**
+
+### 3.4. Фаза 4: Разработка Расширения для IDE
+
+**>>>ЗАДАЧА<<< 4.1.0: Инициализация Расширения для IDE и базовой структуры**
+*   **Статус:** Ожидание
+*   **Зависимости:** Нет
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Использовать `yo code` для генерации шаблона расширения VS Code. Настроить `package.json` и `tsconfig.json`. Создать базовую структуру каталогов (`api`, `views`, `commands`, `models`, `utils`, `config`).
+    *   **Схемы/диаграммы:** См. 2.2. Логическая Архитектура (Структура каталогов Расширения).
+    *   **Примеры кода:**
+        ```typescript
+        // src/extension.ts
+        import * as vscode from 'vscode';
+        export function activate(context: vscode.ExtensionContext) {
+            console.log('Congratulations, your extension "project-manager" is now active!');
+            let disposable = vscode.commands.registerCommand('project-manager.helloWorld', () => {
+                vscode.window.showInformationMessage('Hello World from Project Manager!');
+            });
+            context.subscriptions.push(disposable);
+        }
+        export function deactivate() {}
+        ```
+    *   **Цель задачи:** Подготовить базовую структуру расширения для IDE.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** Расширение успешно устанавливается и активируется в Cursor/VS Code.
+*   **Критерии Приемки:**
+    *   Расширение устанавливается из VSIX файла.
+    *   Команда `project-manager.helloWorld` успешно выполняется.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `npm install -g yo generator-code` и `yo code`.
+    *   Собрать VSIX файл с помощью `vsce package`.
+*   **Связанные Артефакты:** FT-IDE.1.
+*   **<<<Окончание задачи>>> 4.1.0**
+
+**>>>ЗАДАЧА<<< 4.2.0: Реализация настройки URL бэкенда и API-ключа в расширении**
+*   **Статус:** Ожидание
+*   **Зависимости:** 4.1.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `package.json` расширения определить конфигурационные свойства (`configuration`): `backendUrl` и `apiKey`. В `src/config.ts` реализовать функции для чтения этих настроек из `vscode.workspace.getConfiguration()`. В `src/api/pmApiClient.ts` использовать эти настройки для формирования HTTP-запросов.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```json
+        // package.json (фрагмент)
+        "contributes": {
+            "configuration": {
+                "title": "Project Manager Extension Configuration",
+                "properties": {
+                    "projectManager.backendUrl": {
+                        "type": "string",
+                        "default": "http://localhost:8080",
+                        "description": "URL of the Project Manager Backend API."
+                    },
+                    "projectManager.apiKey": {
+                        "type": "string",
+                        "description": "API Key for authentication with the Project Manager Backend."
+                    }
+                }
+            }
+        }
+        ```
+        ```typescript
+        // src/config.ts
+        import * as vscode from 'vscode';
+        export function getBackendUrl(): string {
+            return vscode.workspace.getConfiguration('projectManager').get('backendUrl') || 'http://localhost:8080';
+        }
+        export function getApiKey(): string | undefined {
+            return vscode.workspace.getConfiguration('projectManager').get('apiKey');
+        }
+        ```
+    *   **Цель задачи:** Позволить Пользователю настраивать подключение расширения к бэкенду.
+    *   **Входные данные:** Настройки пользователя в VS Code.
+    *   **Выходные данные/Ожидаемый результат:** Расширение использует настроенные URL и API-ключ для запросов.
+*   **Критерии Приемки:**
+    *   Настройки `backendUrl` и `apiKey` доступны в VS Code Settings.
+    *   Расширение успешно отправляет запросы с использованием этих настроек.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode.workspace.getConfiguration()`.
+*   **Связанные Артефакты:** FT-IDE.2.
+*   **<<<Окончание задачи>>> 4.2.0**
+
+**>>>ЗАДАЧА<<< 4.3.0: Реализация Tree View для Проектов и Задач**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0, 2.3.0, 4.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `src/views/projectsProvider.ts` реализовать `vscode.TreeDataProvider` для отображения проектов. Каждый проект должен быть узлом, который может быть раскрыт для отображения связанных задач. Задачи также должны быть узлами. При клике на проект/задачу, отображать базовую информацию (например, в `vscode.window.showInformationMessage` или в Output Channel).
+    *   **Схемы/диаграммы:**
+        ```
+        [Боковая панель VS Code]
+        +---------------------+
+        | Project Manager     |
+        +---------------------+
+        | > Project A         |
+        |   > Task A.1        |
+        |   > Task A.2        |
+        | > Project B         |
+        |   > Task B.1        |
+        +---------------------+
+        ```
+    *   **Примеры кода:**
+        ```typescript
+        // src/views/projectsProvider.ts
+        import * as vscode from 'vscode';
+        import { pmApiClient } from '../api/pmApiClient';
+        import { Project, Task } from '../models/project'; // Предполагаемые модели
+
+        class ProjectItem extends vscode.TreeItem {
+            constructor(public readonly project: Project, public readonly collapsibleState: vscode.TreeItemCollapsibleState) {
+                super(project.name, collapsibleState);
+                this.tooltip = project.description;
+                this.description = project.status;
+                this.contextValue = 'project';
+            }
+        }
+
+        class TaskItem extends vscode.TreeItem {
+            constructor(public readonly task: Task, public readonly collapsibleState: vscode.TreeItemCollapsibleState) {
+                super(`${task.number}: ${task.title}`, collapsibleState);
+                this.tooltip = task.description;
+                this.description = task.status;
+                this.contextValue = 'task';
+            }
+        }
+
+        export class ProjectsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+            private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
+            readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+            constructor() {}
+
+            refresh(): void {
+                this._onDidChangeTreeData.fire();
+            }
+
+            getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+                return element;
+            }
+
+            async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+                if (element instanceof ProjectItem) {
+                    const tasks = await pmApiClient.getTasksByProject(element.project.id);
+                    return tasks.map(task => new TaskItem(task, vscode.TreeItemCollapsibleState.None));
+                }
+
+                if (!element) {
+                    const projects = await pmApiClient.getProjects();
+                    return projects.map(project => new ProjectItem(project, vscode.TreeItemCollapsibleState.Collapsed));
+                }
+                return [];
+            }
+        }
+        ```
+    *   **Цель задачи:** Предоставить Пользователю удобный способ навигации по проектам и задачам внутри IDE.
+    *   **Входные данные:** Данные проектов и задач из Go Backend.
+    *   **Выходные данные/Ожидаемый результат:** Древовидное представление проектов и задач отображается в боковой панели IDE.
+*   **Критерии Приемки:**
+    *   Список проектов и задач отображается корректно.
+    *   Раскрытие проекта показывает его задачи.
+    *   Обновление данных в бэкенде отражается в Tree View после ручного обновления (через `refresh()` метод провайдера).
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode.window.createTreeView`.
+    *   Реализовать методы `getChildren` и `getTreeItem` для `TreeDataProvider`.
+*   **Связанные Артефакты:** FT-IDE.3.
+*   **<<<Окончание задачи>>> 4.3.0**
+
+**>>>ЗАДАЧА<<< 4.4.0: Реализация команд IDE для CRUD операций и комментариев**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0, 2.3.0, 2.4.0, 2.5.0, 4.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Зарегистрировать команды в `extension.ts` и реализовать их логику в `src/commands/`.
+        *   `createProject`: Запрашивает название, описание, статус через `vscode.window.showInputBox` и `showQuickPick`, затем отправляет `POST /projects`.
+        *   `createTask`: Запрашивает проект, название, описание, статус, приоритет, тип, роль, функциональный блок. Отправляет `POST /projects/{id}/tasks`.
+        *   `updateTaskStatus`: Запрашивает ID задачи и новый статус. Если статус конечный, запрашивает "Результат". Отправляет `PUT /tasks/{id}`.
+        *   `openDocument`: Запрашивает ID документа. Получает содержание документа (`GET /documents/{id}`) и открывает его в новом редакторе VS Code.
+        *   `addCommentToTask`: Запрашивает ID задачи и текст комментария. Отправляет `POST /tasks/{id}/comments`. Поле "пользователь" устанавливается в "Пользователь".
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```typescript
+        // src/commands/taskCommands.ts (фрагмент)
+        import * as vscode from 'vscode';
+        import { pmApiClient } from '../api/pmApiClient';
+        import { TaskStatus } from '../models/task'; // Предполагаемый enum/тип
+
+        export async function updateTaskStatusCommand() {
+            const taskId = await vscode.window.showInputBox({ prompt: 'Enter Task ID' });
+            if (!taskId) return;
+            const newStatus = await vscode.window.showQuickPick(
+                Object.values(TaskStatus), // Используем предопределенные статусы
+                { placeHolder: 'Select new status' }
+            );
+            if (!newStatus) return;
+
+            let result: string | undefined;
+            if (['Done', 'Fixed', 'Closed'].includes(newStatus)) {
+                result = await vscode.window.showInputBox({ prompt: 'Enter result of task execution (required for final status)' });
+                if (!result) {
+                    vscode.window.showErrorMessage('Result is required for final status.');
+                    return;
+                }
+            }
+            try {
+                await pmApiClient.updateTask(taskId, { status: newStatus, result: result });
+                vscode.window.showInformationMessage(`Task ${taskId} status updated to ${newStatus}.`);
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Failed to update task: ${error.message}`);
+            }
+        }
+        ```
+    *   **Цель задачи:** Предоставить Пользователю возможность выполнять основные операции с PM-сущностями через палитру команд IDE.
+    *   **Входные данные:** Ввод пользователя через Quick Pick/Input Box.
+    *   **Выходные данные/Ожидаемый результат:** Операции успешно выполняются, Пользователь получает уведомления.
+*   **Критерии Приемки:**
+    *   Все команды из FT-IDE.4.1-4.5 доступны и работают корректно.
+    *   При изменении статуса на конечный, поле "Результат" запрашивается и отправляется.
+    *   Документы открываются в новом редакторе.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode.window.showInputBox`, `vscode.window.showQuickPick`, `vscode.window.showInformationMessage`, `vscode.window.showErrorMessage`.
+    *   Для `openDocument` использовать `vscode.workspace.openTextDocument` и `vscode.window.showTextDocument`.
+*   **Связанные Артефакты:** FT-IDE.4.1-4.5, FT-TASK.4.2.
+*   **<<<Окончание задачи>>> 4.4.0**
+
+**>>>ЗАДАЧА<<< 4.5.0: Реализация выполнения `.mcp` инструкций**
+*   **Статус:** Ожидание
+*   **Зависимости:** 4.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Зарегистрировать команду `executeMcpFile`. При вызове команды, запросить у Пользователя выбор `.mcp` файла (`vscode.window.showOpenDialog`). Считать содержимое файла, распарсить JSON. Итерировать по массиву команд в JSON. Для каждой команды (`action`) вызвать соответствующую функцию в расширении, передав `payload` как аргументы. Обеспечить обработку ошибок и уведомления Пользователя.
+    *   **Схемы/диаграммы:** См. FT-IDE.5.3.
+    *   **Примеры кода:**
+        ```typescript
+        // src/commands/mcpCommands.ts (фрагмент)
+        import * as vscode from 'vscode';
+        import { pmApiClient } from '../api/pmApiClient';
+        import { createTaskCommand, updateTaskStatusCommand, addCommentToTaskCommand, openDocumentCommand } from './taskCommands'; // Импорт команд
+
+        export async function executeMcpFileCommand() {
+            const fileUris = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                canSelectMany: false,
+                filters: { 'MCP Files': ['mcp'] }
+            });
+            if (!fileUris || fileUris.length === 0) return;
+
+            const filePath = fileUris[0].fsPath;
+            const fileContent = await vscode.workspace.fs.readFile(fileUris[0]);
+            const mcpInstructions = JSON.parse(fileContent.toString());
+
+            for (const instruction of mcpInstructions) {
+                const { action, payload } = instruction;
+                try {
+                    switch (action) {
+                        case 'createTask':
+                            await pmApiClient.createTask(payload.projectId, payload); // Передаем весь payload
+                            break;
+                        case 'updateTaskStatus':
+                            await pmApiClient.updateTask(payload.taskId, payload);
+                            break;
+                        case 'addCommentToTask':
+                            await pmApiClient.addCommentToTask(payload.taskId, payload.comment, "AI Агент"); // Указываем источник
+                            break;
+                        case 'openDocument':
+                            await openDocumentCommand(payload.documentId); // Вызываем существующую команду
+                            break;
+                        case 'createDefectTask':
+                            await pmApiClient.createTask(payload.parentTaskId, { ...payload, type: "Дефект" }); // Создаем дефект
+                            break;
+                        case 'refactorProjectPlan':
+                            // Здесь будет логика для рефакторинга плана, возможно, с запросом подтверждения у пользователя
+                            // payload.tasksOrder будет содержать новый порядок задач
+                            await pmApiClient.updateProjectPlan(payload.projectId, payload.tasksOrder);
+                            vscode.window.showInformationMessage(`Refactoring plan for project ${payload.projectId} initiated.`);
+                            break;
+                        default:
+                            vscode.window.showWarningMessage(`Unknown MCP action: ${action}`);
+                    }
+                    vscode.window.showInformationMessage(`MCP action "${action}" executed successfully.`);
+                } catch (error: any) {
+                    vscode.window.showErrorMessage(`Failed to execute MCP action "${action}": ${error.message}`);
+                }
+            }
+        }
+        ```
+    *   **Цель задачи:** Обеспечить программное выполнение последовательности операций через IDE, что является основой для будущего взаимодействия с внешними AI-агентами.
+    *   **Входные данные:** `.mcp` файл, выбранный Пользователем.
+    *   **Выходные данные/Ожидаемый результат:** Команды из `.mcp` файла выполняются, Пользователь получает уведомления о ходе и результате.
+*   **Критерии Приемки:**
+    *   Выполнение `.mcp` файла успешно создает/обновляет сущности в PM-системе.
+    *   Ошибки в `.mcp` файле или при выполнении команд корректно обрабатываются и отображаются.
+    *   Комментарии, добавленные через `.mcp` файл, имеют пометку "AI Агент".
+*   **Технические Детали/Инструкции:**
+    *   Использовать `JSON.parse` для парсинга `.mcp` файла.
+    *   Обеспечить robust-обработку ошибок парсинга и выполнения.
+*   **Связанные Артефакты:** FT-IDE.5.1-5.4.
+*   **<<<Окончание задачи>>> 4.5.0**
+
+**>>>ЗАДАЧА<<< 4.6.0: Реализация "Пуш" функционала для Cursor IDE**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.3.0, 2.6.0, 4.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   **`pushNextTask` (FT-IDE.4.6):** Команда, которая:
+            *   Запрашивает у бэкенда следующую задачу по плану (`GET /api/v1/projects/{id}/plan/next-task`).
+            *   Если задача найдена и ее статус "To Do", "In Progress" или "Blocked", расширение предлагает Пользователю "взять задачу в работу" (например, через `showInformationMessage` с кнопкой "Взять в работу").
+            *   При подтверждении, расширение может открыть связанные файлы или предложить создать новую ветку Git (вне scope этого этапа, но для будущего).
+        *   **`pushFixDefect` (FT-IDE.4.7):** Команда, которая:
+            *   Запрашивает у бэкенда дефекты, связанные с текущей задачей (если текущая задача выбрана в IDE или указана).
+            *   Предлагает Пользователю исправить дефект (например, открывает файл, связанный с дефектом, или предлагает создать новую ветку).
+        *   **`pushCreateDefect` (FT-IDE.4.8):** Команда, которая:
+            *   Открывает форму для создания новой задачи типа "Дефект" (аналогично `createTask`), но с автоматической привязкой к текущей задаче (если выбрана).
+        *   **`pushTestTask` (FT-IDE.4.9):** Команда, которая:
+            *   Запрашивает у Пользователя подтверждение о проведении тестирования.
+            *   Если Пользователь отвечает, что тестирование не проводилось, расширение уведомляет об этом и ждет дальнейших команд.
+            *   Если тестирование проводилось, расширение может предложить обновить статус задачи или добавить комментарий.
+        *   **`refactorProjectPlan` (FT-IDE.5.3, `action: "refactorProjectPlan"`):** Команда, которая:
+            *   Получает текущий список задач проекта от бэкенда (или из кэша расширения).
+            *   Предлагает Пользователю (через UI расширения, например, Quick Pick с возможностью переупорядочивания или Webview с drag-and-drop) переупорядочить задачи.
+            *   Отправляет обновленный порядок задач на бэкенд (`PUT /api/v1/projects/{id}/plan`).
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```typescript
+        // src/commands/taskCommands.ts (фрагмент)
+        export async function pushNextTaskCommand() {
+            const projectId = await vscode.window.showInputBox({ prompt: 'Enter Project ID to get next task' });
+            if (!projectId) return;
+            try {
+                const nextTask = await pmApiClient.getNextTaskInPlan(projectId);
+                if (nextTask) {
+                    const takeAction = await vscode.window.showInformationMessage(
+                        `Next task: ${nextTask.number} - ${nextTask.title} (${nextTask.status}). Take it?`,
+                        'Yes', 'No'
+                    );
+                    if (takeAction === 'Yes') {
+                        // Логика "взять в работу": например, обновить статус на "In Progress"
+                        await pmApiClient.updateTask(nextTask.id, { status: "In Progress" });
+                        vscode.window.showInformationMessage(`Task ${nextTask.number} is now In Progress.`);
+                    }
+                } else {
+                    vscode.window.showInformationMessage('No next task found in plan.');
+                }
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Failed to get next task: ${error.message}`);
+            }
+        }
+        ```
+    *   **Цель задачи:** Обеспечить интерактивное взаимодействие между PM-системой и Cursor IDE, имитируя "пуш" уведомления и запросы к агенту.
+    *   **Входные данные:** Запросы Пользователя, данные задач и плана.
+    *   **Выходные данные/Ожидаемый результат:** Cursor IDE предлагает Пользователю действия на основе состояния PM-системы.
+*   **Критерии Приемки:**
+    *   Все "пуш" команды доступны и инициируют соответствующую логику.
+    *   Cursor IDE корректно запрашивает следующую задачу только со статусами "To Do", "In Progress", "Blocked".
+    *   Создание дефекта через IDE привязывается к родительской задаче.
+    *   Логика тестирования корректно обрабатывает отсутствие информации о тестировании.
+    *   Рефакторинг плана позволяет Пользователю изменить порядок задач и сохраняет его.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode.window.showInformationMessage` с кнопками для интерактивных запросов.
+    *   Для рефакторинга плана, можно использовать `vscode.window.showQuickPick` с опцией `canPickMany` и ручной сортировкой, или более сложный Webview.
+*   **Связанные Артефакты:** FT-IDE.4.6-4.9, FT-IDE.5.3, FT-TASK.9, FT-PLAN.2.
+*   **<<<Окончание задачи>>> 4.6.0**
+
+**>>>ЗАДАЧА<<< 4.7.0: Реализация кэширования данных в расширении**
+*   **Статус:** Ожидание
+*   **Зависимости:** 4.3.0, 4.4.0, 4.6.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Реализовать простой механизм кэширования для данных о проектах, задачах и плане разработки в памяти расширения. При запросах к бэкенду, сначала проверять кэш. Добавить команду "Обновить данные" (`myPM.refreshData`), которая будет очищать кэш и заново загружать данные с бэкенда.
+    *   **Схемы/диаграммы:**
+        ```
+        Расширение -> (Проверить кэш) -> (Если есть) -> Данные из кэша
+                     |
+                     V
+                     (Если нет/Обновить) -> Go Backend API -> (Сохранить в кэш) -> Данные
+        ```
+    *   **Примеры кода:**
+        ```typescript
+        // src/api/pmApiClient.ts (фрагмент)
+        let projectsCache: Project[] | null = null;
+        let tasksCache: { [projectId: string]: Task[] } = {};
+        let planCache: { [projectId: string]: Task[] } = {}; // Кэш плана, содержащий объекты задач
+
+        export async function getProjects(forceRefresh: boolean = false): Promise<Project[]> {
+            if (projectsCache && !forceRefresh) { return projectsCache; }
+            const projects = await fetchData('/api/v1/projects');
+            projectsCache = projects;
+            return projects;
+        }
+
+        export async function getTasksByProject(projectId: string, forceRefresh: boolean = false): Promise<Task[]> {
+            if (tasksCache[projectId] && !forceRefresh) { return tasksCache[projectId]; }
+            const tasks = await fetchData(`/api/v1/projects/${projectId}/tasks`);
+            tasksCache[projectId] = tasks;
+            return tasks;
+        }
+
+        export function clearCache(): void {
+            projectsCache = null;
+            tasksCache = {};
+            planCache = {};
+            vscode.window.showInformationMessage('Project Manager data cache cleared.');
+        }
+
+        // src/extension.ts (фрагмент)
+        vscode.commands.registerCommand('project-manager.refreshData', () => {
+            pmApiClient.clearCache();
+            // Также нужно обновить Tree View
+            projectsProvider.refresh();
+        });
+        ```
+    *   **Цель задачи:** Повысить производительность и отзывчивость расширения за счет уменьшения количества запросов к бэкенду.
+    *   **Входные данные:** Запросы на данные, команда обновления кэша.
+    *   **Выходные данные/Ожидаемый результат:** Расширение работает быстрее, данные обновляются по запросу.
+*   **Критерии Приемки:**
+    *   Данные загружаются из кэша при повторных запросах.
+    *   Команда "Обновить данные" успешно очищает кэш и перезагружает данные.
+    *   Производительность расширения улучшается.
+*   **Технические Детали/Инструкции:**
+    *   Использовать простые переменные в памяти для кэша.
+    *   Обеспечить, что операции записи (POST/PUT/DELETE) автоматически инвалидируют соответствующий кэш.
+*   **Связанные Артефакты:** FT-IDE.7, FT-IDE.7.1.
+*   **<<<Окончание задачи>>> 4.7.0**
+
+### 3.5. Фаза 5: Тестирование и Развертывание
+
+**>>>ЗАДАЧА<<< 5.1.0: Разработка и запуск Unit-тестов для Go-бэкенда**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 2
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Написать unit-тесты для каждого метода в слоях `services` и `repositories`. Использовать моки для зависимостей (например, мокировать `pgxpool.Pool` для репозиториев). Покрытие тестами должно быть не менее 80%.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```go
+        // services/task_service_test.go
+        package services_test
+        import ( "testing"; "context"; "your_module_name/models"; "your_module_name/services" )
+        // MockTaskRepository - пример мока
+        type MockTaskRepository struct { /* ... */ }
+        func (m *MockTaskRepository) Create(ctx context.Context, task *models.Task) error { /* ... */ return nil }
+        // ...
+        func TestCreateTask(t *testing.T) {
+            mockRepo := &MockTaskRepository{}
+            service := services.NewTaskService(mockRepo, nil) // Передать моки
+            task := &models.Task{Title: "Test Task", Description: "...", ProjectID: "..."}
+            err := service.CreateTask(context.Background(), task)
+            if err != nil { t.Errorf("Expected no error, got %v", err) }
+            // ... проверки
+        }
+        ```
+    *   **Цель задачи:** Обеспечить корректность и надежность бизнес-логики и взаимодействия с БД.
+    *   **Входные данные:** Исходный код Go-бэкенда.
+    *   **Выходные данные/Ожидаемый результат:** Все тесты проходят успешно, покрытие кода соответствует требованиям.
+*   **Критерии Приемки:**
+    *   `go test ./...` выполняется без ошибок.
+    *   Отчет о покрытии тестами показывает не менее 80% для пакетов `services` и `repositories`.
+*   **Технические Детали/Инструкции:**
+    *   Использовать стандартный `testing` пакет Go.
+    *   Применять паттерн "Table Driven Tests".
+*   **Связанные Артефакты:** NFT-REL.1.
+*   **<<<Окончание задачи>>> 5.1.0**
+
+**>>>ЗАДАЧА<<< 5.2.0: Разработка и запуск E2E-тестов для API**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 2
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Написать E2E-тесты для всех API-эндпоинтов, используя HTTP-клиент. Тесты должны проверять корректность ответов, статусов, валидации и взаимодействия с БД.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```go
+        // api_test/project_api_test.go
+        package api_test
+        import ( "testing"; "net/http"; "net/http/httptest"; "bytes"; "encoding/json" )
+        // ...
+        func TestCreateProjectAPI(t *testing.T) {
+            // ... запуск тестового сервера
+            reqBody := []byte(`{"name": "Test Project", "description": "...", "status": "New"}`)
+            req, _ := http.NewRequest("POST", "/api/v1/projects", bytes.NewBuffer(reqBody))
+            req.Header.Set("Content-Type", "application/json")
+            req.Header.Set("X-API-Key", "test-key")
+            rr := httptest.NewRecorder()
+            router.ServeHTTP(rr, req) // router - ваш chi.Mux
+            if status := rr.Code; status != http.StatusCreated {
+                t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
+            }
+            // ... проверка тела ответа
+        }
+        ```
+    *   **Цель задачи:** Убедиться в корректности работы всего API-слоя.
+    *   **Входные данные:** Запущенный Go-бэкенд.
+    *   **Выходные данные/Ожидаемый результат:** Все E2E-тесты проходят успешно.
+*   **Критерии Приемки:**
+    *   Все API-эндпоинты покрыты E2E-тестами.
+    *   Все E2E-тесты проходят успешно.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `httptest` для тестирования HTTP-обработчиков.
+    *   Использовать тестовую БД для изоляции тестов.
+*   **Связанные Артефакты:** FT-BE.1-6, NFT-PERF.1.
+*   **<<<Окончание задачи>>> 5.2.0**
+
+**>>>ЗАДАЧА<<< 5.3.0: Разработка и запуск Unit/Integration/E2E-тестов для Frontend**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 3
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Написать Unit-тесты для компонентов, Integration-тесты для страниц и E2E-тесты для сквозных сценариев веб-интерфейса. Использовать Jest/React Testing Library для Unit/Integration тестов и Cypress/Playwright для E2E тестов.
+    *   **Цель задачи:** Обеспечить качество и стабильность веб-интерфейса.
+    *   **Входные данные:** Исходный код Frontend.
+    *   **Выходные данные/Ожидаемый результат:** Все тесты проходят успешно.
+*   **Критерии Приемки:**
+    *   Unit, Integration и E2E тесты для Frontend разработаны.
+    *   Все тесты проходят успешно.
+*   **Технические Детали/Инструкции:**
+    *   Использовать Jest и React Testing Library (для React).
+    *   Использовать Cypress или Playwright для E2E тестов.
+*   **Связанные Артефакты:** NFT-REL.1.
+*   **<<<Окончание задачи>>> 5.3.0**
+
+**>>>ЗАДАЧА<<< 5.4.0: Разработка и запуск Unit/Integration-тестов для Расширения IDE**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 4
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Написать Unit-тесты для утилит и API-клиента расширения. Написать Integration-тесты для команд и Tree View провайдеров, используя `vscode-test` для запуска тестов в среде VS Code.
+    *   **Цель задачи:** Обеспечить качество и стабильность расширения IDE.
+    *   **Входные данные:** Исходный код Расширения IDE.
+    *   **Выходные данные/Ожидаемый результат:** Все тесты проходят успешно.
+*   **Критерии Приемки:**
+    *   Unit и Integration тесты для Расширения IDE разработаны.
+    *   Все тесты проходят успешно.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode-test` для тестирования расширений.
+*   **Связанные Артефакты:** NFT-REL.1.
+*   **<<<Окончание задачи>>> 5.4.0**
+
+**>>>ЗАДАЧА<<< 5.5.0: Сборка и развертывание Go-бэкенда и Frontend в Docker**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 2, Все задачи Фазы 3
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Создать `Dockerfile` для Go-бэкенда, использующий multi-stage build для создания минимального образа.
+        *   Создать `Dockerfile` для Frontend, использующий multi-stage build для сборки статических файлов и их отдачи через Nginx/Caddy или встроенный сервер.
+        *   Обновить `docker-compose.yml` для включения сервисов `go_app` и `frontend`. Настроить зависимости и проброс портов.
+    *   **Схемы/диаграммы:** См. 2.3. Физическая/Развертываемая Архитектура.
+    *   **Примеры кода:**
+        ```dockerfile
+        # Dockerfile (Go Backend)
+        FROM golang:1.21-alpine AS builder
+        WORKDIR /app
+        COPY go.mod go.sum ./
+        RUN go mod download
+        COPY . .
+        RUN CGO_ENABLED=0 go build -o /project-manager ./main.go
+
+        FROM alpine:latest
+        WORKDIR /app
+        COPY --from=builder /project-manager .
+        EXPOSE 8080
+        CMD ["./project-manager"]
+        ```
+        ```dockerfile
+        # Dockerfile (Frontend - React example)
+        FROM node:18-alpine AS builder
+        WORKDIR /app
+        COPY package.json package-lock.json ./
+        RUN npm install
+        COPY . .
+        RUN npm run build
+
+        FROM nginx:alpine
+        COPY --from=builder /app/build /usr/share/nginx/html
+        EXPOSE 3000 # Или 80, если Nginx будет слушать на 80
+        CMD ["nginx", "-g", "daemon off;"]
+        ```
+        ```yaml
+        # docker-compose.yml (фрагмент)
+        services:
+          go_app:
+            build: .
+            ports:
+              - "8080:8080"
+            environment:
+              DATABASE_URL: "postgres://user:password@db:5432/project_manager_db?sslmode=disable"
+              PORT: "8080"
+              API_KEY: "your-api-key"
+            depends_on:
+              - db
+          frontend:
+            build: ./frontend
+            ports:
+              - "3000:3000" # Или 80:80 если Nginx
+            depends_on:
+              - go_app
+        ```
+    *   **Цель задачи:** Обеспечить легкое и воспроизводимое развертывание всей системы.
+    *   **Входные данные:** Исходный код Go-бэкенда и Frontend.
+    *   **Выходные данные/Ожидаемый результат:** Все компоненты системы успешно запускаются через `docker-compose up`.
+*   **Критерии Приемки:**
+    *   `docker-compose up -d` запускает все сервисы без ошибок.
+    *   Веб-интерфейс доступен в браузере.
+    *   API-эндпоинты Go-бэкенда доступны.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `docker build` и `docker-compose up`.
+    *   Настроить переменные окружения для контейнеров.
+*   **Связанные Артефакты:** 2.3. Физическая/Развертываемая Архитектура, NFT-SCA.1.
+*   **<<<Окончание задачи>>> 5.5.0**
+
+---
+
+## 4. План Разработки
+
+### 4.1. Общие Фазы и Вехи
+
+Проект будет разбит на 5 основных фаз, каждая из которых завершается ключевой вехой.
+
+*   **Фаза 1: Инициализация и Настройка (Веха: Базовая инфраструктура готова)**
+    *   Цель: Подготовить окружение разработки, настроить БД и базовый HTTP-сервер.
+    *   Срок: 1 неделя.
+*   **Фаза 2: Разработка Core-функционала (Бэкенд) (Веха: Полный API для PM-сущностей)**
+    *   Цель: Реализовать все CRUD-операции и бизнес-логику на бэкенде.
+    *   Срок: 3 недели.
+*   **Фаза 3: Разработка Веб-интерфейса (Frontend) (Веха: Полностью функциональный веб-UI)**
+    *   Цель: Создать пользовательский интерфейс для всех PM-операций.
+    *   Срок: 3 недели.
+*   **Фаза 4: Разработка Расширения для IDE (Веха: Рабочая интеграция с Cursor/VS Code)**
+    *   Цель: Реализовать взаимодействие с PM-системой из IDE.
+    *   Срок: 2 недели.
+*   **Фаза 5: Тестирование и Развертывание (Веха: Стабильная и развернутая система)**
+    *   Цель: Обеспечить качество кода, протестировать систему и подготовить к развертыванию.
+    *   Срок: 1 неделя.
+
+### 4.2. Последовательность Выполнения Задач
+
+Задачи будут выполняться последовательно внутри фаз, с учетом указанных зависимостей. Некоторые задачи могут выполняться параллельно, если нет явных зависимостей.
+
+**Фаза 1: Инициализация и Настройка**
+*   1.0.0: Инициализация Go-проекта и базовой структуры (AI-Backend-Agent)
+*   1.1.0: Настройка Docker Compose для PostgreSQL (AI-DevOps-Agent)
+*   1.2.0: Реализация подключения Go-бэкенда к PostgreSQL и миграций (AI-Backend-Agent) - *Зависит от 1.0.0, 1.1.0*
+*   1.3.0: Реализация базового HTTP-сервера и роутера (AI-Backend-Agent) - *Зависит от 1.0.0*
+*   1.4.0: Реализация базовой аутентификации по API-ключу (AI-Backend-Agent) - *Зависит от 1.3.0*
+
+**Фаза 2: Разработка Core-функционала (Бэкенд)**
+*   2.1.0: Реализация CRUD для Функциональных Блоков (AI-Backend-Agent) - *Зависит от 1.2.0, 1.3.0, 1.4.0*
+*   2.2.0: Реализация CRUD для Проектов (AI-Backend-Agent) - *Зависит от 1.2.0, 1.3.0, 1.4.0*
+*   2.3.0: Реализация CRUD для Задач (без комментариев и логов) (AI-Backend-Agent) - *Зависит от 2.1.0, 2.2.0*
+*   2.4.0: Реализация Комментариев и Логирования Операций (AI-Backend-Agent) - *Зависит от 2.3.0*
+*   2.5.0: Реализация CRUD для Документов (AI-Backend-Agent) - *Зависит от 2.2.0*
+*   2.6.0: Реализация Управления Планом Разработки (AI-Backend-Agent) - *Зависит от 2.2.0, 2.3.0*
+
+**Фаза 3: Разработка Веб-интерфейса (Frontend)**
+*   3.1.0: Инициализация Frontend-проекта и базовой структуры (AI-Frontend-Agent)
+*   3.2.0: Реализация сквозной панели навигации и базового роутинга (AI-Frontend-Agent) - *Зависит от 3.1.0*
+*   3.3.0: Реализация страниц CRUD для Функциональных Блоков (AI-Frontend-Agent) - *Зависит от 2.1.0, 3.2.0*
+*   3.4.0: Реализация страниц CRUD для Проектов (AI-Frontend-Agent) - *Зависит от 2.2.0, 3.2.0*
+*   3.5.0: Реализация страниц CRUD для Задач (AI-Frontend-Agent) - *Зависит от 2.3.0, 3.4.0*
+*   3.6.0: Реализация отображения Комментариев и Логирования Операций (AI-Frontend-Agent) - *Зависит от 2.4.0, 3.5.0*
+*   3.7.0: Реализация страниц CRUD для Документов (AI-Frontend-Agent) - *Зависит от 2.5.0, 3.4.0*
+*   3.8.0: Реализация раздела "План Разработки" (AI-Frontend-Agent) - *Зависит от 2.6.0, 3.4.0, 3.5.0*
+*   3.9.0: Реализация визуальных индикаторов и логирования Frontend (AI-Frontend-Agent) - *Зависит от 3.1.0*
+
+**Фаза 4: Разработка Расширения для IDE**
+*   4.1.0: Инициализация Расширения для IDE и базовой структуры (AI-DevOps-Agent)
+*   4.2.0: Реализация настройки URL бэкенда и API-ключа в расширении (AI-DevOps-Agent) - *Зависит от 4.1.0*
+*   4.3.0: Реализация Tree View для Проектов и Задач (AI-Frontend-Agent) - *Зависит от 2.2.0, 2.3.0, 4.2.0*
+*   4.4.0: Реализация команд IDE для CRUD операций и комментариев (AI-Frontend-Agent) - *Зависит от 2.2.0, 2.3.0, 2.4.0, 2.5.0, 4.2.0*
+*   4.5.0: Реализация выполнения `.mcp` инструкций (AI-Frontend-Agent) - *Зависит от 4.4.0*
+*   4.6.0: Реализация "Пуш" функционала для Cursor IDE (AI-Frontend-Agent) - *Зависит от 2.3.0, 2.6.0, 4.4.0*
+*   4.7.0: Реализация кэширования данных в расширении (AI-Frontend-Agent) - *Зависит от 4.3.0, 4.4.0, 4.6.0*
+
+**Фаза 5: Тестирование и Развертывание**
+*   5.1.0: Разработка и запуск Unit-тестов для Go-бэкенда (AI-Backend-Agent) - *Зависит от всех задач Фазы 2*
+*   5.2.0: Разработка и запуск E2E-тестов для API (AI-Backend-Agent) - *Зависит от всех задач Фазы 2*
+*   5.3.0: Разработка и запуск Unit/Integration/E2E-тестов для Frontend (AI-Frontend-Agent) - *Зависит от всех задач Фазы 3*
+*   5.4.0: Разработка и запуск Unit/Integration-тестов для Расширения IDE (AI-Frontend-Agent) - *Зависит от всех задач Фазы 4*
+*   5.5.0: Сборка и развертывание Go-бэкенда и Frontend в Docker (AI-DevOps-Agent) - *Зависит от всех задач Фазы 2, Всех задач Фазы 3*
+
+### 4.3. Потенциальные Риски и Меры Снижения
+
+*   **Риск 1: Сложность синхронизации состояния между веб-UI и расширением IDE (Уровень: 3)**
+    *   **Описание:** Изменения, сделанные в одном интерфейсе, могут не сразу отображаться в другом без ручного обновления.
+    *   **Меры снижения:** На первом этапе использовать ручное обновление (кнопка "Обновить" в Tree View расширения, перезагрузка страницы в браузере). В будущем рассмотреть использование WebSocket для push-уведомлений.
+*   **Риск 2: Ограничения VS Code Extension API для сложных UI (Уровень: 2)**
+    *   **Описание:** Некоторые сложные UI-элементы (например, drag-and-drop для плана) могут быть трудно реализуемы в нативном UI расширения.
+    *   **Меры снижения:** Использовать Webviews для более сложных форм/UI, где это необходимо. Начать с простых решений (кнопки "Вверх/Вниз" для порядка задач).
+*   **Риск 3: Производительность локального PostgreSQL на слабых машинах (Уровень: 2)**
+    *   **Описание:** Если у пользователя слабая машина, локальный PostgreSQL в Docker может работать медленно.
+    *   **Меры снижения:** Оптимизировать запросы к БД. Предоставить инструкции по настройке Docker для лучшей производительности.
+*   **Риск 4: Неполнота или некорректность `.mcp` инструкций (Уровень: 3)**
+    *   **Описание:** Несмотря на использование JSON, `.mcp` файл может содержать неполные данные (отсутствующие обязательные поля) или синтаксические ошибки, что приведет к сбоям при выполнении.
+    *   **Меры снижения:** Расширение должно выполнять строгую валидацию JSON-схемы для `.mcp` файлов перед их выполнением. Предоставлять четкие сообщения об ошибках валидации. В будущем можно рассмотреть использование JSON Schema для формального описания `.mcp` формата.
+*   **Риск 5: Отсутствие полноценной ролевой модели и аутентификации (Уровень: 3)**
+    *   **Описание:** Использование предопределенного API-ключа и пользователя не подходит для продакшн-среды.
+    *   **Меры снижения:** Четко обозначить это как ограничение первого этапа. Запланировать реализацию полноценной системы аутентификации/авторизации на следующих этапах.
+
+---
+
+## 5. Вопросы, предложения, риски.
+
+### 5.1. Вопросы и Предложения
+
+*   **Вопрос 1 (Уровень 3):** Как будет реализована генерация уникального номера задачи (`FT-TASK.1.1`)? Будет ли это простой инкрементный счетчик в рамках функционального блока, или глобальный счетчик, или что-то более сложное?
+    *   **Предложение:** Для первого этапа, использовать **глобальный инкрементный счетчик** для числовой части номера задачи, который атомарно увеличивается при создании каждой задачи. Префикс функционального блока будет добавляться к этому глобальному номеру. Например, `AUTH-1`, `FEAT-2`, `AUTH-3`. Это проще в реализации, чем счетчик для каждого блока.
+*   **Вопрос 2 (Уровень 2):** Как будет реализовано поле "Функциональный блок" в UI для задачи? Будет ли это выпадающий список с возможностью выбора из существующих блоков, или текстовое поле для ввода нового?
+    *   **Предложение:** Реализовать как **выпадающий список**, который подтягивает существующие функциональные блоки из БД. Добавить кнопку "Создать новый функциональный блок" рядом с выпадающим списком, которая перенаправляет на страницу создания блока.
+*   **Вопрос 3 (Уровень 3):** Как будет реализован "Рефакторинг плана" (`FT-PLAN.2`) на стороне расширения? Будет ли это просто UI для ручного перетаскивания задач, или расширение будет пытаться "предложить" порядок на основе какой-то эвристики (например, по зависимостям, если они будут добавлены в будущем)?
+    *   **Предложение:** На первом этапе, это будет **UI для ручного перетаскивания/переупорядочивания задач** в расширении. Расширение получит текущий список задач проекта (возможно, из кэша), позволит Пользователю изменить их порядок, а затем отправит новый порядок на бэкенд. Автоматическое "предложение" порядка от Cursor IDE (без LLM) на этом этапе не реализуется.
+*   **Вопрос 4 (Уровень 2):** Как будет реализована "пометка" источника комментария (`FT-COMMENT.4`)? Будет ли это просто префикс в тексте комментария ("AI Агент: ...") или отдельное поле в БД (`user_identifier`)?
+    *   **Предложение:** Использовать **отдельное поле `user_identifier`** в БД (`VARCHAR(255)`), которое будет содержать "Пользователь" или "AI Агент". Это более структурировано и позволяет легко фильтровать комментарии по источнику. В UI можно отображать это поле как часть заголовка комментария.
+*   **Вопрос 5 (Уровень 3):** Как будет реализована логика "Пуш" функционала для Cursor IDE (`FT-IDE.4.6-4.9`)? Будет ли это просто вызов команды в расширении, которая затем запрашивает данные у бэкенда и отображает их, или будет какая-то более сложная логика "агента" внутри расширения?
+    *   **Предложение:** На первом этапе это будет **вызов команды в расширении**, которая запрашивает данные у бэкенда и отображает их Пользователю через стандартные UI-элементы VS Code (информационные сообщения, Quick Pick). Логика "агента" (принятие решений, выбор инструментов) будет минимальной и жестко закодированной в расширении, а не динамически определяемой.
+
+### 5.2. Риски
+
+*   **Риск 1: Сложность управления состоянием Frontend (Уровень: 3)**
+    *   **Описание:** По мере роста количества страниц и взаимодействий, управление состоянием в React/Vue/Angular может стать сложным без четкой стратегии (например, Redux, Vuex, Zustand).
+    *   **Меры снижения:** Начать с `React Context API` (или аналога) для простых случаев. Если проект будет расти, рассмотреть внедрение более мощной библиотеки для управления состоянием на ранних этапах.
+*   **Риск 2: Производительность и отзывчивость расширения IDE (Уровень: 3)**
+    *   **Описание:** Если запросы к бэкенду будут медленными или UI-обновления в расширении будут неоптимальными, это может привести к плохому пользовательскому опыту.
+    *   **Меры снижения:** Оптимизировать API-запросы (использовать пагинацию, кэширование на стороне расширения для часто запрашиваемых, но редко меняющихся данных). Использовать асинхронные операции и индикаторы загрузки.
+*   **Риск 3: Отсутствие автоматического тестирования Frontend и Расширения (Уровень: 4)**
+    *   **Описание:** В плане нет явных задач по автоматическому тестированию Frontend и Расширения. Это может привести к появлению багов и снижению качества.
+    *   **Меры снижения:** Включить в следующие этапы задачи по написанию Unit/Integration/E2E тестов для Frontend (например, с Jest/React Testing Library/Cypress) и для Расширения (с использованием `vscode-test`).
+*   **Риск 4: Неполнота или некорректность `.mcp` инструкций (Уровень: 3)**
+    *   **Описание:** Несмотря на использование JSON, `.mcp` файл может содержать неполные данные (отсутствующие обязательные поля) или синтаксические ошибки, что приведет к сбоям при выполнении.
+    *   **Меры снижения:** Расширение должно выполнять строгую валидацию JSON-схемы для `.mcp` файлов перед их выполнением. Предоставлять четкие сообщения об ошибках валидации. В будущем можно рассмотреть использование JSON Schema для формального описания `.mcp` формата.
+*   **Риск 5: Отсутствие полноценной ролевой модели и аутентификации (Уровень: 3)**
+    *   **Описание:** Использование предопределенного API-ключа и пользователя не подходит для продакшн-среды.
+    *   **Меры снижения:** Четко обозначить это как ограничение первого этапа. Запланировать реализацию полноценной системы аутентификации/авторизации на следующих этапах.
+
+---
+
+## 6. Дополнительные Задачи (Git и Коммиты)
+
+**>>>ЗАДАЧА<<< 6.1.0: Инициализация Git-репозитория**
+*   **Статус:** Ожидание
+*   **Зависимости:** Нет
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Создать корневой Git-репозиторий для всего проекта. Добавить `.gitignore` файлы для Go, Frontend и расширения.
+    *   **Цель задачи:** Обеспечить контроль версий для всего исходного кода.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** Инициализированный Git-репозиторий.
+*   **Критерии Приемки:**
+    *   Команда `git status` в корне проекта показывает чистый репозиторий (после добавления `.gitignore`).
+*   **Технические Детали/Инструкции:**
+    *   Использовать `git init`.
+    *   Создать `.gitignore` для Go, Node.js, VS Code.
+*   **Связанные Артефакты:** Нет.
+*   **<<<Окончание задачи>>> 6.1.0**
+
+**>>>ЗАДАЧА<<< 6.2.0: Коммиты по каждой задаче**
+*   **Статус:** Ожидание
+*   **Зависимости:** 6.1.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** После завершения каждой детализированной задачи (например, 1.0.0, 1.1.0 и т.д.), создать отдельный коммит в Git-репозитории. Сообщение коммита должно быть информативным и включать номер задачи.
+    *   **Примеры кода:**
+        ```bash
+        git add .
+        git commit -m "TASK-1.0.0: Инициализация Go-проекта и базовой структуры"
+        ```
+    *   **Цель задачи:** Обеспечить атомарные, отслеживаемые изменения в коде, соответствующие выполненным задачам.
+    *   **Входные данные:** Выполненный код задачи.
+    *   **Выходные данные/Ожидаемый результат:** История Git-коммитов, где каждый коммит соответствует выполненной задаче.
+*   **Критерии Приемки:**
+    *   История Git-коммитов отражает выполнение каждой задачи.
+    *   Сообщения коммитов соответствуют формату "TASK-НОМЕР: Название задачи".
+*   **Технические Детали/Инструкции:**
+    *   Использовать `git add .` и `git commit -m "..."`.
+*   **Связанные Артефакты:** Нет.
+*   **<<<Окончание задачи>>> 6.2.0**

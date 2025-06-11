@@ -1,0 +1,82 @@
+**>>>ЗАДАЧА<<< 2.1.0: Реализация CRUD для Функциональных Блоков**
+*   **Статус:** Ожидание
+*   **Зависимости:** 1.2.0, 1.3.0, 1.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.FunctionalBlock` (id, name, prefix, created_at, updated_at).
+        *   Реализовать `repositories.FunctionalBlockRepository` с методами `Create`, `GetByID`, `GetAll`, `Update`, `Delete`, `GetByPrefix`.
+        *   Реализовать `services.FunctionalBlockService` с методами `CreateFunctionalBlock`, `GetFunctionalBlockByID`, `GetAllFunctionalBlocks`, `UpdateFunctionalBlock`, `DeleteFunctionalBlock`. В сервисе добавить валидацию уникальности префикса и его формата (не более 6 латинских букв, только латинские буквы).
+        *   Реализовать `handlers.FunctionalBlockHandler` с HTTP-методами для CRUD-операций.
+        *   Зарегистрировать маршруты в `router/router.go`: `GET /api/v1/functional-blocks`, `POST /api/v1/functional-blocks`, `GET /api/v1/functional-blocks/{id}`, `PUT /api/v1/functional-blocks/{id}`, `DELETE /api/v1/functional-blocks/{id}`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`functional_blocks`).
+    *   **Примеры кода:**
+        ```go
+        // models/functional_block.go
+        package models
+        import "time"
+        type FunctionalBlock struct {
+            ID        string    `json:"id" db:"id"`
+            Name      string    `json:"name" db:"name"`
+            Prefix    string    `json:"prefix" db:"prefix"`
+            CreatedAt time.Time `json:"createdAt" db:"created_at"`
+            UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+        }
+
+        // repositories/functional_block_repo.go
+        package repositories
+        import ( "context"; "github.com/jackc/pgx/v5/pgxpool"; "your_module_name/models" )
+        type FunctionalBlockRepository struct { db *pgxpool.Pool }
+        func NewFunctionalBlockRepository(db *pgxpool.Pool) *FunctionalBlockRepository { return &FunctionalBlockRepository{db: db} }
+        func (r *FunctionalBlockRepository) Create(ctx context.Context, fb *models.FunctionalBlock) error {
+            query := `INSERT INTO functional_blocks (name, prefix) VALUES ($1, $2) RETURNING id, created_at, updated_at`
+            return r.db.QueryRow(ctx, query, fb.Name, fb.Prefix).Scan(&fb.ID, &fb.CreatedAt, &fb.UpdatedAt)
+        }
+        func (r *FunctionalBlockRepository) GetByID(ctx context.Context, id string) (*models.FunctionalBlock, error) { /* ... */ }
+        func (r *FunctionalBlockRepository) GetByPrefix(ctx context.Context, prefix string) (*models.FunctionalBlock, error) { /* ... */ }
+        func (r *FunctionalBlockRepository) GetAll(ctx context.Context) ([]models.FunctionalBlock, error) { /* ... */ }
+        func (r *FunctionalBlockRepository) Update(ctx context.Context, fb *models.FunctionalBlock) error { /* ... */ }
+        func (r *FunctionalBlockRepository) Delete(ctx context.Context, id string) error { /* ... */ }
+
+        // services/functional_block_service.go
+        package services
+        import ( "context"; "errors"; "regexp"; "your_module_name/models"; "your_module_name/repositories" )
+        var prefixRegex = regexp.MustCompile(`^[A-Z]{1,6}$`)
+        type FunctionalBlockService struct { repo *repositories.FunctionalBlockRepository }
+        func NewFunctionalBlockService(repo *repositories.FunctionalBlockRepository) *FunctionalBlockService { return &FunctionalBlockService{repo: repo} }
+        func (s *FunctionalBlockService) CreateFunctionalBlock(ctx context.Context, fb *models.FunctionalBlock) error {
+            if !prefixRegex.MatchString(fb.Prefix) { return errors.New("prefix must be 1-6 uppercase Latin letters") }
+            existing, _ := s.repo.GetByPrefix(ctx, fb.Prefix)
+            if existing != nil { return errors.New("prefix already exists") }
+            return s.repo.Create(ctx, fb)
+        }
+        // ... другие методы
+
+        // handlers/functional_block_handler.go
+        package handlers
+        import ( "net/http"; "encoding/json"; "github.com/go-chi/chi/v5"; "your_module_name/models"; "your_module_name/services" )
+        type FunctionalBlockHandler struct { service *services.FunctionalBlockService }
+        func NewFunctionalBlockHandler(service *services.FunctionalBlockService) *FunctionalBlockHandler { return &FunctionalBlockHandler{service: service} }
+        func (h *FunctionalBlockHandler) CreateFunctionalBlock(w http.ResponseWriter, r *http.Request) {
+            var fb models.FunctionalBlock
+            if err := json.NewDecoder(r.Body).Decode(&fb); err != nil { http.Error(w, err.Error(), http.StatusBadRequest); return }
+            if err := h.service.CreateFunctionalBlock(r.Context(), &fb); err != nil { http.Error(w, err.Error(), http.StatusInternalServerError); return }
+            w.WriteHeader(http.StatusCreated); json.NewEncoder(w).Encode(fb)
+        }
+        // ... другие HTTP-методы
+        ```
+    *   **Цель задачи:** Обеспечить полный CRUD функционал для управления функциональными блоками через API.
+    *   **Входные данные:** JSON-объекты функциональных блоков.
+    *   **Выходные данные/Ожидаемый результат:** Успешное создание, чтение, обновление, удаление функциональных блоков через API.
+*   **Критерии Приемки:**
+    *   API-эндпоинты для функциональных блоков доступны и отвечают 200 OK/201 Created.
+    *   Создание блока с невалидным префиксом (длина, символы) или неуникальным префиксом возвращает 400 Bad Request.
+    *   Удаление блока успешно удаляет его из БД.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `json.Unmarshal` и `json.Marshal` для работы с JSON.
+    *   Реализовать валидацию префикса с помощью регулярных выражений.
+    *   Обработать `sql.ErrNoRows` для `GetByID` как 404 Not Found.
+*   **Связанные Артефакты:** FT-FUNCBLOCK.1-5, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.1.0** 

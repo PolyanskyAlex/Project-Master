@@ -1,0 +1,48 @@
+**>>>ЗАДАЧА<<< 3.9.0: Реализация визуальных индикаторов и логирования Frontend**
+*   **Статус:** Ожидание
+*   **Зависимости:** 3.1.0
+*   **Приоритет:** Средний
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Применить стили для отображения цветных значков или выделения цветом для статусов и приоритетов задач. Добавить индикаторы загрузки для асинхронных операций. Реализовать логирование основных операций и ошибок в консоль браузера.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```javascript
+        // src/components/TaskItem.js (фрагмент)
+        function TaskItem({ task }) {
+            const statusColor = { "To Do": "blue", "In Progress": "orange", "Done": "green" }[task.status] || "gray";
+            return (
+                <div style={{ borderLeft: `5px solid ${statusColor}` }}>
+                    {task.title} ({task.status})
+                </div>
+            );
+        }
+
+        // src/services/api.js (фрагмент)
+        async function fetchData(url, options) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    console.error(`API Error: ${response.status} - ${await response.text()}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log(`API Success: ${url}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`API Request Failed: ${error.message}`);
+                throw error;
+            }
+        }
+        ```
+    *   **Цель задачи:** Улучшить читаемость UI и обеспечить базовое логирование на стороне клиента.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** UI становится более наглядным, в консоли браузера отображаются логи операций.
+*   **Критерии Приемки:**
+    *   Статусы и приоритеты задач визуально отличаются.
+    *   При выполнении асинхронных операций отображается индикатор загрузки.
+    *   В консоли браузера видны логи успешных операций и ошибок.
+*   **Технические Детали/Инструкции:**
+    *   Использовать CSS-классы или inline-стили для цветовой индикации.
+    *   Использовать `console.log`, `console.error` для логирования.
+*   **Связанные Артефакты:** FT-WEB.5, FT-WEB.7.
+*   **<<<Окончание задачи>>> 3.9.0**

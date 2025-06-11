@@ -1,0 +1,39 @@
+**>>>ЗАДАЧА<<< 5.2.0: Разработка и запуск E2E-тестов для API**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 2
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Написать E2E-тесты для всех API-эндпоинтов, используя HTTP-клиент. Тесты должны проверять корректность ответов, статусов, валидации и взаимодействия с БД.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```go
+        // api_test/project_api_test.go
+        package api_test
+        import ( "testing"; "net/http"; "net/http/httptest"; "bytes"; "encoding/json" )
+        // ...
+        func TestCreateProjectAPI(t *testing.T) {
+            // ... запуск тестового сервера
+            reqBody := []byte(`{"name": "Test Project", "description": "...", "status": "New"}`)
+            req, _ := http.NewRequest("POST", "/api/v1/projects", bytes.NewBuffer(reqBody))
+            req.Header.Set("Content-Type", "application/json")
+            req.Header.Set("X-API-Key", "test-key")
+            rr := httptest.NewRecorder()
+            router.ServeHTTP(rr, req) // router - ваш chi.Mux
+            if status := rr.Code; status != http.StatusCreated {
+                t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
+            }
+            // ... проверка тела ответа
+        }
+        ```
+    *   **Цель задачи:** Убедиться в корректности работы всего API-слоя.
+    *   **Входные данные:** Запущенный Go-бэкенд.
+    *   **Выходные данные/Ожидаемый результат:** Все E2E-тесты проходят успешно.
+*   **Критерии Приемки:**
+    *   Все API-эндпоинты покрыты E2E-тестами.
+    *   Все E2E-тесты проходят успешно.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `httptest` для тестирования HTTP-обработчиков.
+    *   Использовать тестовую БД для изоляции тестов.
+*   **Связанные Артефакты:** FT-BE.1-6, NFT-PERF.1.
+*   **<<<Окончание задачи>>> 5.2.0**

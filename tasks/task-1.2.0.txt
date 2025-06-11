@@ -1,0 +1,133 @@
+**>>>ЗАДАЧА<<< 1.2.0: Реализация подключения Go-бэкенда к PostgreSQL и миграций**
+*   **Статус:** Ожидание
+*   **Зависимости:** 1.0.0, 1.1.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `config/config.go` реализовать загрузку `DATABASE_URL` из `.env`. В `database/db.go` реализовать функцию `ConnectDB` для создания пула соединений `pgxpool.Pool` и функцию `RunMigrations` для применения миграций. Создать папку `database/migrations` и первый SQL-файл миграции (`001_create_tables.up.sql`) для создания всех базовых таблиц (`functional_blocks`, `projects`, `tasks`, `comments`, `documents`, `operation_logs`, `project_plan_sequences`) согласно 2.5. Модели Данных.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных.
+    *   **Примеры кода:**
+        ```go
+        // config/config.go
+        package config
+        import ( "os"; "log"; "github.com/joho/godotenv" )
+        type Config struct { DatabaseURL string; ServerPort string; APIKey string } // Добавить APIKey
+        func LoadConfig() *Config {
+            err := godotenv.Load()
+            if err != nil { log.Println("No .env file found, relying on environment variables") }
+            return &Config{DatabaseURL: os.Getenv("DATABASE_URL"), ServerPort: os.Getenv("PORT"), APIKey: os.Getenv("API_KEY")}
+        }
+
+        // database/db.go
+        package database
+        import ( "context"; "log"; "github.com/jackc/pgx/v5/pgxpool"; "github.com/golang-migrate/migrate/v4"; _ "github.com/golang-migrate/migrate/v4/database/postgres"; _ "github.com/golang-migrate/migrate/v4/source/file" )
+        var DB *pgxpool.Pool
+        func ConnectDB(databaseURL string) {
+            var err error
+            DB, err = pgxpool.New(context.Background(), databaseURL)
+            if err != nil { log.Fatalf("Unable to connect to database: %v\n", err) }
+            err = DB.Ping(context.Background())
+            if err != nil { log.Fatalf("Cannot ping database: %v\n", err) }
+            log.Println("Connected to database!")
+        }
+        func RunMigrations(databaseURL, migrationsPath string) {
+            m, err := migrate.New(fmt.Sprintf("file://%s", migrationsPath), databaseURL)
+            if err != nil { log.Fatalf("Error creating migrate instance: %v\n", err) }
+            if err := m.Up(); err != nil && err != migrate.ErrNoChange { log.Fatalf("Error running migrations: %v\n", err) }
+            log.Println("Database migrations applied!")
+        }
+
+        // database/migrations/001_create_tables.up.sql
+        CREATE TABLE IF NOT EXISTS functional_blocks (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(255) NOT NULL,
+            prefix VARCHAR(6) UNIQUE NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS projects (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            status VARCHAR(50) DEFAULT 'Новый',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS tasks (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            functional_block_id UUID REFERENCES functional_blocks(id),
+            number VARCHAR(255) UNIQUE NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            status VARCHAR(50) DEFAULT 'Новая',
+            priority VARCHAR(50) DEFAULT 'Средний',
+            type VARCHAR(50) DEFAULT 'Новый функционал',
+            role VARCHAR(255),
+            result TEXT,
+            parent_task_id UUID REFERENCES tasks(id), -- Для дефектов
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS comments (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            user_identifier VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS documents (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            type VARCHAR(50) NOT NULL, -- e.g., 'BRD', 'SAD', 'AI-Ready', 'AI Executable'
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            agent_editable BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS operation_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            user_identifier VARCHAR(255) NOT NULL,
+            operation_type VARCHAR(50) NOT NULL,
+            details JSONB,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS project_plan_sequences (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            sequence_order INTEGER NOT NULL,
+            UNIQUE (project_id, task_id), -- Задача может быть в плане только один раз
+            UNIQUE (project_id, sequence_order), -- Порядок уникален для проекта
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Таблица для глобального счетчика номеров задач
+        CREATE TABLE IF NOT EXISTS task_number_sequence (
+            id SERIAL PRIMARY KEY,
+            current_value BIGINT NOT NULL DEFAULT 0
+        );
+        INSERT INTO task_number_sequence (id, current_value) VALUES (1, 0) ON CONFLICT (id) DO NOTHING;
+        ```
+    *   **Цель задачи:** Установить соединение с БД и обеспечить автоматическое создание/обновление схемы БД.
+    *   **Входные данные:** `DATABASE_URL` в `.env`.
+    *   **Выходные данные/Ожидаемый результат:** Go-приложение успешно подключается к PostgreSQL и применяет миграции.
+*   **Критерии Приемки:**
+    *   Все таблицы из 2.5. Модели Данных созданы в БД после запуска приложения.
+    *   Таблица `task_number_sequence` создана и содержит одну запись с `current_value = 0`.
+    *   Логи приложения показывают успешное подключение и применение миграций.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `pgxpool.New` для создания пула.
+    *   Использовать `migrate.New` и `m.Up()` для миграций.
+    *   Добавить `gen_random_uuid()` в SQL-схему для UUID.
+*   **Связанные Артефакты:** 2.5. Модели Данных.
+*   **<<<Окончание задачи>>> 1.2.0** 

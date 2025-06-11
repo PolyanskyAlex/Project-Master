@@ -1,0 +1,37 @@
+**>>>ЗАДАЧА<<< 5.1.0: Разработка и запуск Unit-тестов для Go-бэкенда**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 2
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Написать unit-тесты для каждого метода в слоях `services` и `repositories`. Использовать моки для зависимостей (например, мокировать `pgxpool.Pool` для репозиториев). Покрытие тестами должно быть не менее 80%.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```go
+        // services/task_service_test.go
+        package services_test
+        import ( "testing"; "context"; "your_module_name/models"; "your_module_name/services" )
+        // MockTaskRepository - пример мока
+        type MockTaskRepository struct { /* ... */ }
+        func (m *MockTaskRepository) Create(ctx context.Context, task *models.Task) error { /* ... */ return nil }
+        // ...
+        func TestCreateTask(t *testing.T) {
+            mockRepo := &MockTaskRepository{}
+            service := services.NewTaskService(mockRepo, nil) // Передать моки
+            task := &models.Task{Title: "Test Task", Description: "...", ProjectID: "..."}
+            err := service.CreateTask(context.Background(), task)
+            if err != nil { t.Errorf("Expected no error, got %v", err) }
+            // ... проверки
+        }
+        ```
+    *   **Цель задачи:** Обеспечить корректность и надежность бизнес-логики и взаимодействия с БД.
+    *   **Входные данные:** Исходный код Go-бэкенда.
+    *   **Выходные данные/Ожидаемый результат:** Все тесты проходят успешно, покрытие кода соответствует требованиям.
+*   **Критерии Приемки:**
+    *   `go test ./...` выполняется без ошибок.
+    *   Отчет о покрытии тестами показывает не менее 80% для пакетов `services` и `repositories`.
+*   **Технические Детали/Инструкции:**
+    *   Использовать стандартный `testing` пакет Go.
+    *   Применять паттерн "Table Driven Tests".
+*   **Связанные Артефакты:** NFT-REL.1.
+*   **<<<Окончание задачи>>> 5.1.0**

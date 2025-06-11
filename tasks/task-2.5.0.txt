@@ -1,0 +1,25 @@
+**>>>ЗАДАЧА<<< 2.5.0: Реализация CRUD для Документов**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.Document` (id, project_id, type, title, content, agent_editable, created_at, updated_at).
+        *   Реализовать `repositories.DocumentRepository` с методами `Create`, `GetByID`, `GetByProjectID`, `Update`, `Delete`.
+        *   Реализовать `services.DocumentService` с методами `CreateDocument`, `GetDocumentByID`, `GetDocumentsByProjectID`, `UpdateDocument`, `DeleteDocument`.
+        *   Реализовать `handlers.DocumentHandler` с HTTP-методами для CRUD-операций.
+        *   Зарегистрировать маршруты в `router/router.go`: `GET /api/v1/projects/{id}/documents`, `POST /api/v1/projects/{id}/documents`, `GET /api/v1/documents/{id}`, `PUT /api/v1/documents/{id}`, `DELETE /api/v1/documents/{id}`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`documents`).
+    *   **Примеры кода:** Аналогично 2.1.0, но для сущности Document.
+    *   **Цель задачи:** Обеспечить полный CRUD функционал для управления документами через API.
+    *   **Входные данные:** JSON-объекты документов.
+    *   **Выходные данные/Ожидаемый результат:** Успешное создание, чтение, обновление, удаление документов через API.
+*   **Критерии Приемки:**
+    *   API-эндпоинты для документов доступны и отвечают 200 OK/201 Created.
+    *   Документы сохраняются с корректным типом и флагом `agent_editable`.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   Валидация поля `type` на соответствие предопределенным значениям (BRD, SAD, AI-Ready, AI Executable).
+*   **Связанные Артефакты:** FT-DOC.1-8, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.5.0**

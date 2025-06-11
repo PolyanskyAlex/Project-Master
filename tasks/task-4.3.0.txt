@@ -1,0 +1,85 @@
+**>>>ЗАДАЧА<<< 4.3.0: Реализация Tree View для Проектов и Задач**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0, 2.3.0, 4.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `src/views/projectsProvider.ts` реализовать `vscode.TreeDataProvider` для отображения проектов. Каждый проект должен быть узлом, который может быть раскрыт для отображения связанных задач. Задачи также должны быть узлами. При клике на проект/задачу, отображать базовую информацию (например, в `vscode.window.showInformationMessage` или в Output Channel).
+    *   **Схемы/диаграммы:**
+        ```
+        [Боковая панель VS Code]
+        +---------------------+
+        | Project Manager     |
+        +---------------------+
+        | > Project A         |
+        |   > Task A.1        |
+        |   > Task A.2        |
+        | > Project B         |
+        |   > Task B.1        |
+        +---------------------+
+        ```
+    *   **Примеры кода:**
+        ```typescript
+        // src/views/projectsProvider.ts
+        import * as vscode from 'vscode';
+        import { pmApiClient } from '../api/pmApiClient';
+        import { Project, Task } from '../models/project'; // Предполагаемые модели
+
+        class ProjectItem extends vscode.TreeItem {
+            constructor(public readonly project: Project, public readonly collapsibleState: vscode.TreeItemCollapsibleState) {
+                super(project.name, collapsibleState);
+                this.tooltip = project.description;
+                this.description = project.status;
+                this.contextValue = 'project';
+            }
+        }
+
+        class TaskItem extends vscode.TreeItem {
+            constructor(public readonly task: Task, public readonly collapsibleState: vscode.TreeItemCollapsibleState) {
+                super(`${task.number}: ${task.title}`, collapsibleState);
+                this.tooltip = task.description;
+                this.description = task.status;
+                this.contextValue = 'task';
+            }
+        }
+
+        export class ProjectsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+            private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
+            readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+            constructor() {}
+
+            refresh(): void {
+                this._onDidChangeTreeData.fire();
+            }
+
+            getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+                return element;
+            }
+
+            async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+                if (element instanceof ProjectItem) {
+                    const tasks = await pmApiClient.getTasksByProject(element.project.id);
+                    return tasks.map(task => new TaskItem(task, vscode.TreeItemCollapsibleState.None));
+                }
+
+                if (!element) {
+                    const projects = await pmApiClient.getProjects();
+                    return projects.map(project => new ProjectItem(project, vscode.TreeItemCollapsibleState.Collapsed));
+                }
+                return [];
+            }
+        }
+        ```
+    *   **Цель задачи:** Предоставить Пользователю удобный способ навигации по проектам и задачам внутри IDE.
+    *   **Входные данные:** Данные проектов и задач из Go Backend.
+    *   **Выходные данные/Ожидаемый результат:** Древовидное представление проектов и задач отображается в боковой панели IDE.
+*   **Критерии Приемки:**
+    *   Список проектов и задач отображается корректно.
+    *   Раскрытие проекта показывает его задачи.
+    *   Обновление данных в бэкенде отражается в Tree View после ручного обновления (через `refresh()` метод провайдера).
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode.window.createTreeView`.
+    *   Реализовать методы `getChildren` и `getTreeItem` для `TreeDataProvider`.
+*   **Связанные Артефакты:** FT-IDE.3.
+*   **<<<Окончание задачи>>> 4.3.0**

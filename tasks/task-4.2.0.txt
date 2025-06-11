@@ -1,0 +1,48 @@
+**>>>ЗАДАЧА<<< 4.2.0: Реализация настройки URL бэкенда и API-ключа в расширении**
+*   **Статус:** Ожидание
+*   **Зависимости:** 4.1.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** В `package.json` расширения определить конфигурационные свойства (`configuration`): `backendUrl` и `apiKey`. В `src/config.ts` реализовать функции для чтения этих настроек из `vscode.workspace.getConfiguration()`. В `src/api/pmApiClient.ts` использовать эти настройки для формирования HTTP-запросов.
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```json
+        // package.json (фрагмент)
+        "contributes": {
+            "configuration": {
+                "title": "Project Manager Extension Configuration",
+                "properties": {
+                    "projectManager.backendUrl": {
+                        "type": "string",
+                        "default": "http://localhost:8080",
+                        "description": "URL of the Project Manager Backend API."
+                    },
+                    "projectManager.apiKey": {
+                        "type": "string",
+                        "description": "API Key for authentication with the Project Manager Backend."
+                    }
+                }
+            }
+        }
+        ```
+        ```typescript
+        // src/config.ts
+        import * as vscode from 'vscode';
+        export function getBackendUrl(): string {
+            return vscode.workspace.getConfiguration('projectManager').get('backendUrl') || 'http://localhost:8080';
+        }
+        export function getApiKey(): string | undefined {
+            return vscode.workspace.getConfiguration('projectManager').get('apiKey');
+        }
+        ```
+    *   **Цель задачи:** Позволить Пользователю настраивать подключение расширения к бэкенду.
+    *   **Входные данные:** Настройки пользователя в VS Code.
+    *   **Выходные данные/Ожидаемый результат:** Расширение использует настроенные URL и API-ключ для запросов.
+*   **Критерии Приемки:**
+    *   Настройки `backendUrl` и `apiKey` доступны в VS Code Settings.
+    *   Расширение успешно отправляет запросы с использованием этих настроек.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode.workspace.getConfiguration()`.
+*   **Связанные Артефакты:** FT-IDE.2.
+*   **<<<Окончание задачи>>> 4.2.0**

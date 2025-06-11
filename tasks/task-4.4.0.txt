@@ -1,0 +1,57 @@
+**>>>ЗАДАЧА<<< 4.4.0: Реализация команд IDE для CRUD операций и комментариев**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.2.0, 2.3.0, 2.4.0, 2.5.0, 4.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Зарегистрировать команды в `extension.ts` и реализовать их логику в `src/commands/`.
+        *   `createProject`: Запрашивает название, описание, статус через `vscode.window.showInputBox` и `showQuickPick`, затем отправляет `POST /projects`.
+        *   `createTask`: Запрашивает проект, название, описание, статус, приоритет, тип, роль, функциональный блок. Отправляет `POST /projects/{id}/tasks`.
+        *   `updateTaskStatus`: Запрашивает ID задачи и новый статус. Если статус конечный, запрашивает "Результат". Отправляет `PUT /tasks/{id}`.
+        *   `openDocument`: Запрашивает ID документа. Получает содержание документа (`GET /documents/{id}`) и открывает его в новом редакторе VS Code.
+        *   `addCommentToTask`: Запрашивает ID задачи и текст комментария. Отправляет `POST /tasks/{id}/comments`. Поле "пользователь" устанавливается в "Пользователь".
+    *   **Схемы/диаграммы:** Нет.
+    *   **Примеры кода:**
+        ```typescript
+        // src/commands/taskCommands.ts (фрагмент)
+        import * as vscode from 'vscode';
+        import { pmApiClient } from '../api/pmApiClient';
+        import { TaskStatus } from '../models/task'; // Предполагаемый enum/тип
+
+        export async function updateTaskStatusCommand() {
+            const taskId = await vscode.window.showInputBox({ prompt: 'Enter Task ID' });
+            if (!taskId) return;
+            const newStatus = await vscode.window.showQuickPick(
+                Object.values(TaskStatus), // Используем предопределенные статусы
+                { placeHolder: 'Select new status' }
+            );
+            if (!newStatus) return;
+
+            let result: string | undefined;
+            if (['Done', 'Fixed', 'Closed'].includes(newStatus)) {
+                result = await vscode.window.showInputBox({ prompt: 'Enter result of task execution (required for final status)' });
+                if (!result) {
+                    vscode.window.showErrorMessage('Result is required for final status.');
+                    return;
+                }
+            }
+            try {
+                await pmApiClient.updateTask(taskId, { status: newStatus, result: result });
+                vscode.window.showInformationMessage(`Task ${taskId} status updated to ${newStatus}.`);
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Failed to update task: ${error.message}`);
+            }
+        }
+        ```
+    *   **Цель задачи:** Предоставить Пользователю возможность выполнять основные операции с PM-сущностями через палитру команд IDE.
+    *   **Входные данные:** Ввод пользователя через Quick Pick/Input Box.
+    *   **Выходные данные/Ожидаемый результат:** Операции успешно выполняются, Пользователь получает уведомления.
+*   **Критерии Приемки:**
+    *   Все команды из FT-IDE.4.1-4.5 доступны и работают корректно.
+    *   При изменении статуса на конечный, поле "Результат" запрашивается и отправляется.
+    *   Документы открываются в новом редакторе.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `vscode.window.showInputBox`, `vscode.window.showQuickPick`, `vscode.window.showInformationMessage`, `vscode.window.showErrorMessage`.
+    *   Для `openDocument` использовать `vscode.workspace.openTextDocument` и `vscode.window.showTextDocument`.
+*   **Связанные Артефакты:** FT-IDE.4.1-4.5, FT-TASK.4.2.
+*   **<<<Окончание задачи>>> 4.4.0**

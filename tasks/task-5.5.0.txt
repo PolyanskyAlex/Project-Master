@@ -1,0 +1,73 @@
+**>>>ЗАДАЧА<<< 5.5.0: Сборка и развертывание Go-бэкенда и Frontend в Docker**
+*   **Статус:** Ожидание
+*   **Зависимости:** Все задачи Фазы 2, Все задачи Фазы 3
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Создать `Dockerfile` для Go-бэкенда, использующий multi-stage build для создания минимального образа.
+        *   Создать `Dockerfile` для Frontend, использующий multi-stage build для сборки статических файлов и их отдачи через Nginx/Caddy или встроенный сервер.
+        *   Обновить `docker-compose.yml` для включения сервисов `go_app` и `frontend`. Настроить зависимости и проброс портов.
+    *   **Схемы/диаграммы:** См. 2.3. Физическая/Развертываемая Архитектура.
+    *   **Примеры кода:**
+        ```dockerfile
+        # Dockerfile (Go Backend)
+        FROM golang:1.21-alpine AS builder
+        WORKDIR /app
+        COPY go.mod go.sum ./
+        RUN go mod download
+        COPY . .
+        RUN CGO_ENABLED=0 go build -o /project-manager ./main.go
+
+        FROM alpine:latest
+        WORKDIR /app
+        COPY --from=builder /project-manager .
+        EXPOSE 8080
+        CMD ["./project-manager"]
+        ```
+        ```dockerfile
+        # Dockerfile (Frontend - React example)
+        FROM node:18-alpine AS builder
+        WORKDIR /app
+        COPY package.json package-lock.json ./
+        RUN npm install
+        COPY . .
+        RUN npm run build
+
+        FROM nginx:alpine
+        COPY --from=builder /app/build /usr/share/nginx/html
+        EXPOSE 3000 # Или 80, если Nginx будет слушать на 80
+        CMD ["nginx", "-g", "daemon off;"]
+        ```
+        ```yaml
+        # docker-compose.yml (фрагмент)
+        services:
+          go_app:
+            build: .
+            ports:
+              - "8080:8080"
+            environment:
+              DATABASE_URL: "postgres://user:password@db:5432/project_manager_db?sslmode=disable"
+              PORT: "8080"
+              API_KEY: "your-api-key"
+            depends_on:
+              - db
+          frontend:
+            build: ./frontend
+            ports:
+              - "3000:3000" # Или 80:80 если Nginx
+            depends_on:
+              - go_app
+        ```
+    *   **Цель задачи:** Обеспечить легкое и воспроизводимое развертывание всей системы.
+    *   **Входные данные:** Исходный код Go-бэкенда и Frontend.
+    *   **Выходные данные/Ожидаемый результат:** Все компоненты системы успешно запускаются через `docker-compose up`.
+*   **Критерии Приемки:**
+    *   `docker-compose up -d` запускает все сервисы без ошибок.
+    *   Веб-интерфейс доступен в браузере.
+    *   API-эндпоинты Go-бэкенда доступны.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `docker build` и `docker-compose up`.
+    *   Настроить переменные окружения для контейнеров.
+*   **Связанные Артефакты:** 2.3. Физическая/Развертываемая Архитектура, NFT-SCA.1.
+*   **<<<Окончание задачи>>> 5.5.0**

@@ -1,0 +1,75 @@
+**>>>ЗАДАЧА<<< 4.5.0: Реализация выполнения `.mcp` инструкций**
+*   **Статус:** Ожидание
+*   **Зависимости:** 4.4.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Зарегистрировать команду `executeMcpFile`. При вызове команды, запросить у Пользователя выбор `.mcp` файла (`vscode.window.showOpenDialog`). Считать содержимое файла, распарсить JSON. Итерировать по массиву команд в JSON. Для каждой команды (`action`) вызвать соответствующую функцию в расширении, передав `payload` как аргументы. Обеспечить обработку ошибок и уведомления Пользователя.
+    *   **Схемы/диаграммы:** См. FT-IDE.5.3.
+    *   **Примеры кода:**
+        ```typescript
+        // src/commands/mcpCommands.ts (фрагмент)
+        import * as vscode from 'vscode';
+        import { pmApiClient } from '../api/pmApiClient';
+        import { createTaskCommand, updateTaskStatusCommand, addCommentToTaskCommand, openDocumentCommand } from './taskCommands'; // Импорт команд
+
+        export async function executeMcpFileCommand() {
+            const fileUris = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                canSelectMany: false,
+                filters: { 'MCP Files': ['mcp'] }
+            });
+            if (!fileUris || fileUris.length === 0) return;
+
+            const filePath = fileUris[0].fsPath;
+            const fileContent = await vscode.workspace.fs.readFile(fileUris[0]);
+            const mcpInstructions = JSON.parse(fileContent.toString());
+
+            for (const instruction of mcpInstructions) {
+                const { action, payload } = instruction;
+                try {
+                    switch (action) {
+                        case 'createTask':
+                            await pmApiClient.createTask(payload.projectId, payload); // Передаем весь payload
+                            break;
+                        case 'updateTaskStatus':
+                            await pmApiClient.updateTask(payload.taskId, payload);
+                            break;
+                        case 'addCommentToTask':
+                            await pmApiClient.addCommentToTask(payload.taskId, payload.comment, "AI Агент"); // Указываем источник
+                            break;
+                        case 'openDocument':
+                            await openDocumentCommand(payload.documentId); // Вызываем существующую команду
+                            break;
+                        case 'createDefectTask':
+                            await pmApiClient.createTask(payload.parentTaskId, { ...payload, type: "Дефект" }); // Создаем дефект
+                            break;
+                        case 'refactorProjectPlan':
+                            // Здесь будет логика для рефакторинга плана, возможно, с запросом подтверждения у пользователя
+                            // payload.tasksOrder будет содержать новый порядок задач
+                            await pmApiClient.updateProjectPlan(payload.projectId, payload.tasksOrder);
+                            vscode.window.showInformationMessage(`Refactoring plan for project ${payload.projectId} initiated.`);
+                            break;
+                        default:
+                            vscode.window.showWarningMessage(`Unknown MCP action: ${action}`);
+                    }
+                    vscode.window.showInformationMessage(`MCP action "${action}" executed successfully.`);
+                } catch (error: any) {
+                    vscode.window.showErrorMessage(`Failed to execute MCP action "${action}": ${error.message}`);
+                }
+            }
+        }
+        ```
+    *   **Цель задачи:** Обеспечить программное выполнение последовательности операций через IDE, что является основой для будущего взаимодействия с внешними AI-агентами.
+    *   **Входные данные:** `.mcp` файл, выбранный Пользователем.
+    *   **Выходные данные/Ожидаемый результат:** Команды из `.mcp` файла выполняются, Пользователь получает уведомления о ходе и результате.
+*   **Критерии Приемки:**
+    *   Выполнение `.mcp` файла успешно создает/обновляет сущности в PM-системе.
+    *   Ошибки в `.mcp` файле или при выполнении команд корректно обрабатываются и отображаются.
+    *   Комментарии, добавленные через `.mcp` файл, имеют пометку "AI Агент".
+*   **Технические Детали/Инструкции:**
+    *   Использовать `JSON.parse` для парсинга `.mcp` файла.
+    *   Обеспечить robust-обработку ошибок парсинга и выполнения.
+*   **Связанные Артефакты:** FT-IDE.5.1-5.4.
+*   **<<<Окончание задачи>>> 4.5.0**

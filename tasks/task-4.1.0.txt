@@ -1,0 +1,32 @@
+**>>>ЗАДАЧА<<< 4.1.0: Инициализация Расширения для IDE и базовой структуры**
+*   **Статус:** Ожидание
+*   **Зависимости:** Нет
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-DevOps-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Использовать `yo code` для генерации шаблона расширения VS Code. Настроить `package.json` и `tsconfig.json`. Создать базовую структуру каталогов (`api`, `views`, `commands`, `models`, `utils`, `config`).
+    *   **Схемы/диаграммы:** См. 2.2. Логическая Архитектура (Структура каталогов Расширения).
+    *   **Примеры кода:**
+        ```typescript
+        // src/extension.ts
+        import * as vscode from 'vscode';
+        export function activate(context: vscode.ExtensionContext) {
+            console.log('Congratulations, your extension "project-manager" is now active!');
+            let disposable = vscode.commands.registerCommand('project-manager.helloWorld', () => {
+                vscode.window.showInformationMessage('Hello World from Project Manager!');
+            });
+            context.subscriptions.push(disposable);
+        }
+        export function deactivate() {}
+        ```
+    *   **Цель задачи:** Подготовить базовую структуру расширения для IDE.
+    *   **Входные данные:** Отсутствуют.
+    *   **Выходные данные/Ожидаемый результат:** Расширение успешно устанавливается и активируется в Cursor/VS Code.
+*   **Критерии Приемки:**
+    *   Расширение устанавливается из VSIX файла.
+    *   Команда `project-manager.helloWorld` успешно выполняется.
+*   **Технические Детали/Инструкции:**
+    *   Использовать `npm install -g yo generator-code` и `yo code`.
+    *   Собрать VSIX файл с помощью `vsce package`.
+*   **Связанные Артефакты:** FT-IDE.1.
+*   **<<<Окончание задачи>>> 4.1.0**

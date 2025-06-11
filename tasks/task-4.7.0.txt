@@ -1,0 +1,61 @@
+**>>>ЗАДАЧА<<< 4.7.0: Реализация кэширования данных в расширении**
+*   **Статус:** Ожидание
+*   **Зависимости:** 4.3.0, 4.4.0, 4.6.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Frontend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:** Реализовать простой механизм кэширования для данных о проектах, задачах и плане разработки в памяти расширения. При запросах к бэкенду, сначала проверять кэш. Добавить команду "Обновить данные" (`myPM.refreshData`), которая будет очищать кэш и заново загружать данные с бэкенда.
+    *   **Схемы/диаграммы:**
+        ```
+        Расширение -> (Проверить кэш) -> (Если есть) -> Данные из кэша
+                     |
+                     V
+                     (Если нет/Обновить) -> Go Backend API -> (Сохранить в кэш) -> Данные
+        ```
+    *   **Примеры кода:**
+        ```typescript
+        // src/api/pmApiClient.ts (фрагмент)
+        let projectsCache: Project[] | null = null;
+        let tasksCache: { [projectId: string]: Task[] } = {};
+        let planCache: { [projectId: string]: Task[] } = {}; // Кэш плана, содержащий объекты задач
+
+        export async function getProjects(forceRefresh: boolean = false): Promise<Project[]> {
+            if (projectsCache && !forceRefresh) { return projectsCache; }
+            const projects = await fetchData('/api/v1/projects');
+            projectsCache = projects;
+            return projects;
+        }
+
+        export async function getTasksByProject(projectId: string, forceRefresh: boolean = false): Promise<Task[]> {
+            if (tasksCache[projectId] && !forceRefresh) { return tasksCache[projectId]; }
+            const tasks = await fetchData(`/api/v1/projects/${projectId}/tasks`);
+            tasksCache[projectId] = tasks;
+            return tasks;
+        }
+
+        export function clearCache(): void {
+            projectsCache = null;
+            tasksCache = {};
+            planCache = {};
+            vscode.window.showInformationMessage('Project Manager data cache cleared.');
+        }
+
+        // src/extension.ts (фрагмент)
+        vscode.commands.registerCommand('project-manager.refreshData', () => {
+            pmApiClient.clearCache();
+            // Также нужно обновить Tree View
+            projectsProvider.refresh();
+        });
+        ```
+    *   **Цель задачи:** Повысить производительность и отзывчивость расширения за счет уменьшения количества запросов к бэкенду.
+    *   **Входные данные:** Запросы на данные, команда обновления кэша.
+    *   **Выходные данные/Ожидаемый результат:** Расширение работает быстрее, данные обновляются по запросу.
+*   **Критерии Приемки:**
+    *   Данные загружаются из кэша при повторных запросах.
+    *   Команда "Обновить данные" успешно очищает кэш и перезагружает данные.
+    *   Производительность расширения улучшается.
+*   **Технические Детали/Инструкции:**
+    *   Использовать простые переменные в памяти для кэша.
+    *   Обеспечить, что операции записи (POST/PUT/DELETE) автоматически инвалидируют соответствующий кэш.
+*   **Связанные Артефакты:** FT-IDE.7, FT-IDE.7.1.
+*   **<<<Окончание задачи>>> 4.7.0**

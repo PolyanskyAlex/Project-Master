@@ -1,0 +1,139 @@
+**>>>ЗАДАЧА<<< 2.3.0: Реализация CRUD для Задач (без комментариев и логов)**
+*   **Статус:** Ожидание
+*   **Зависимости:** 2.1.0, 2.2.0
+*   **Приоритет:** Высокий
+*   **Ответственный:** AI-Backend-Agent
+*   **Подробнейшее Описание:**
+    *   **Логика работы:**
+        *   Определить `models.Task` (id, project_id, functional_block_id, number, title, description, status, priority, type, role, result, parent_task_id, created_at, updated_at).
+        *   Реализовать `repositories.TaskRepository` с методами `Create`, `GetByID`, `GetByProjectID`, `Update`, `Delete`, `GetNextGlobalTaskNumber`.
+        *   Реализовать `services.TaskService` с методами `CreateTask`, `GetTaskByID`, `GetTasksByProjectID`, `UpdateTask`, `DeleteTask`, `CopyTask`.
+        *   **Автоматическая нумерация:** В `CreateTask` сервиса:
+            *   Получить префикс функционального блока по `functional_block_id` (через `FunctionalBlockService`).
+            *   Атомарно получить следующий глобальный инкрементный счетчик из таблицы `task_number_sequence`.
+            *   Сформировать полный номер задачи: `ПРЕФИКС-ГЛОБАЛЬНЫЙ_НОМЕР`.
+            *   Установить статус новой задачи в "Новая".
+        *   **Валидация:**
+            *   `title`, `description`, `project_id` обязательны.
+            *   `status`, `priority`, `type` должны быть из предопределенных списков (FT-TASK.6).
+            *   Поля `title` и `description` **нельзя редактировать**, если статус задачи не "Новая".
+            *   Поле `number` **нельзя редактировать** после создания.
+            *   Удаление задачи разрешено **только в статусе "Новая"**.
+            *   При создании задачи типа "Дефект", `parent_task_id` должен быть валидным ID существующей задачи.
+            *   Поле `result` должно быть заполнено, если статус меняется на конечный (`Done`, `Fixed`, `Closed`).
+        *   **Копирование задачи:** Метод `CopyTask` должен создать новую задачу с новым уникальным номером, скопировать все поля кроме `id`, `number`, `created_at`, `updated_at`, `result`, `parent_task_id` (установить в NULL), и установить статус в "Новая".
+        *   Реализовать `handlers.TaskHandler` с HTTP-методами для CRUD-операций.
+        *   Зарегистрировать маршруты в `router/router.go`: `GET /api/v1/projects/{id}/tasks`, `POST /api/v1/projects/{id}/tasks`, `GET /api/v1/tasks/{id}`, `PUT /api/v1/tasks/{id}`, `DELETE /api/v1/tasks/{id}`, `POST /api/v1/tasks/{id}/copy`.
+    *   **Схемы/диаграммы:** См. 2.5. Модели Данных (`tasks`).
+    *   **Примеры кода:**
+        ```go
+        // services/task_service.go (фрагмент)
+        package services
+        import (
+            "context"; "errors"; "fmt"; "your_module_name/models"; "your_module_name/repositories"
+        )
+        type TaskService struct {
+            taskRepo *repositories.TaskRepository
+            functionalBlockRepo *repositories.FunctionalBlockRepository
+            // ... другие репозитории
+        }
+        func NewTaskService(tr *repositories.TaskRepository, fbr *repositories.FunctionalBlockRepository) *TaskService {
+            return &TaskService{taskRepo: tr, functionalBlockRepo: fbr}
+        }
+        func (s *TaskService) CreateTask(ctx context.Context, task *models.Task) error {
+            if task.FunctionalBlockID != "" {
+                fb, err := s.functionalBlockRepo.GetByID(ctx, task.FunctionalBlockID)
+                if err != nil { return fmt.Errorf("functional block not found: %w", err) }
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx) // Атомарное получение номера
+                if err != nil { return fmt.Errorf("failed to get next task number: %w", err) }
+                task.Number = fmt.Sprintf("%s-%d", fb.Prefix, nextNum)
+            } else {
+                // Если нет функционального блока, можно использовать дефолтный префикс или просто номер
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx)
+                if err != nil { return fmt.Errorf("failed to get next task number: %w", err) }
+                task.Number = fmt.Sprintf("%d", nextNum)
+            }
+            task.Status = "Новая" // Изначальный статус
+            // ... валидация других полей
+            return s.taskRepo.Create(ctx, task)
+        }
+        func (s *TaskService) UpdateTask(ctx context.Context, task *models.Task) error {
+            existingTask, err := s.taskRepo.GetByID(ctx, task.ID)
+            if err != nil { return err }
+            if existingTask.Status != "Новая" {
+                task.Title = existingTask.Title // Запрет на изменение названия
+                task.Description = existingTask.Description // Запрет на изменение описания
+            }
+            if task.Number != existingTask.Number { return errors.New("task number cannot be changed") } // Запрет на изменение номера
+            // Валидация result для конечных статусов
+            if (task.Status == "Done" || task.Status == "Fixed" || task.Status == "Closed") && task.Result == "" {
+                return errors.New("result is required for final status")
+            }
+            // ... валидация статусов, приоритетов, типов
+            return s.taskRepo.Update(ctx, task)
+        }
+        func (s *TaskService) DeleteTask(ctx context.Context, id string) error {
+            task, err := s.taskRepo.GetByID(ctx, id)
+            if err != nil { return err }
+            if task.Status != "Новая" { return errors.New("can only delete tasks in 'Новая' status") }
+            return s.taskRepo.Delete(ctx, id)
+        }
+        func (s *TaskService) CopyTask(ctx context.Context, originalTaskID string) (*models.Task, error) {
+            originalTask, err := s.taskRepo.GetByID(ctx, originalTaskID)
+            if err != nil { return nil, err }
+            newTask := *originalTask // Копируем все поля
+            newTask.ID = "" // UUID будет сгенерирован БД
+            newTask.Result = ""
+            newTask.ParentTaskID = "" // Новая задача не является дефектом
+            newTask.Status = "Новая"
+            // Генерируем новый номер для скопированной задачи
+            if newTask.FunctionalBlockID != "" {
+                fb, err := s.functionalBlockRepo.GetByID(ctx, newTask.FunctionalBlockID)
+                if err != nil { return nil, fmt.Errorf("functional block not found for copy: %w", err) }
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx)
+                if err != nil { return nil, fmt.Errorf("failed to get next task number for copy: %w", err) }
+                newTask.Number = fmt.Sprintf("%s-%d", fb.Prefix, nextNum)
+            } else {
+                nextNum, err := s.taskRepo.GetNextGlobalTaskNumber(ctx)
+                if err != nil { return nil, fmt.Errorf("failed to get next task number for copy: %w", err) }
+                newTask.Number = fmt.Sprintf("%d", nextNum)
+            }
+            return &newTask, s.taskRepo.Create(ctx, &newTask)
+        }
+        ```
+        ```go
+        // repositories/task_repo.go (фрагмент)
+        package repositories
+        import ( "context"; "github.com/jackc/pgx/v5/pgxpool" )
+        // ...
+        func (r *TaskRepository) GetNextGlobalTaskNumber(ctx context.Context) (int64, error) {
+            var nextNum int64
+            tx, err := r.db.Begin(ctx)
+            if err != nil { return 0, err }
+            defer tx.Rollback(ctx) // Rollback on error
+
+            _, err = tx.Exec(ctx, "LOCK TABLE task_number_sequence IN EXCLUSIVE MODE") // Блокируем таблицу
+            if err != nil { return 0, err }
+
+            err = tx.QueryRow(ctx, "UPDATE task_number_sequence SET current_value = current_value + 1 WHERE id = 1 RETURNING current_value").Scan(&nextNum)
+            if err != nil { return 0, err }
+
+            return nextNum, tx.Commit(ctx)
+        }
+        ```
+    *   **Цель задачи:** Обеспечить полный CRUD функционал для управления задачами, включая автоматическую нумерацию, валидацию и копирование.
+    *   **Входные данные:** JSON-объекты задач.
+    *   **Выходные данные/Ожидаемый результат:** Успешное создание, чтение, обновление, удаление, копирование задач через API.
+*   **Критерии Приемки:**
+    *   Создание задачи генерирует уникальный номер с правильным префиксом.
+    *   Попытка изменить название/описание задачи не в статусе "Новая" возвращает ошибку.
+    *   Попытка удалить задачу не в статусе "Новая" возвращает ошибку.
+    *   Копирование задачи создает новую задачу с новым номером и статусом "Новая".
+    *   Поле "Результат" становится обязательным при изменении статуса на конечный.
+    *   Попытка изменить номер задачи возвращает ошибку.
+    *   Все операции логируются.
+*   **Технические Детали/Инструкции:**
+    *   Использовать транзакции для операций, требующих нескольких шагов (например, генерация номера).
+    *   Реализовать логику `GetNextGlobalTaskNumber` в репозитории, которая будет атомарно получать следующий номер.
+*   **Связанные Артефакты:** FT-TASK.1-9, FT-BE.1-6.
+*   **<<<Окончание задачи>>> 2.3.0**
