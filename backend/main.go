@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"path/filepath"
 
 	"project-manager/config"
 	"project-manager/database"
+	"project-manager/router"
 )
 
 func main() {
@@ -14,16 +17,35 @@ func main() {
 	// Загрузка конфигурации
 	cfg := config.LoadConfig()
 
-	// Подключение к базе данных
+	// Подключение к базе данных (опционально)
 	if cfg.DatabaseURL != "" {
-		database.ConnectDB(cfg.DatabaseURL)
-
-		// Применение миграций
-		migrationsPath, _ := filepath.Abs("database/migrations")
-		database.RunMigrations(cfg.DatabaseURL, migrationsPath)
+		fmt.Println("Attempting to connect to database...")
+		err := database.ConnectDB(cfg.DatabaseURL)
+		if err != nil {
+			fmt.Printf("Database connection failed: %v\n", err)
+			fmt.Println("Continuing without database...")
+		} else {
+			// Применение миграций
+			migrationsPath, _ := filepath.Abs("database/migrations")
+			err = database.RunMigrations(cfg.DatabaseURL, migrationsPath)
+			if err != nil {
+				fmt.Printf("Migration failed: %v\n", err)
+				fmt.Println("Continuing without migrations...")
+			}
+		}
 	} else {
 		fmt.Println("DATABASE_URL not set, skipping database connection")
 	}
 
-	fmt.Printf("Server will start on port %s\n", cfg.ServerPort)
+	// Создание роутера
+	r := router.NewRouter(cfg)
+
+	// Запуск HTTP-сервера
+	port := cfg.ServerPort
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Server starting on port %s\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }

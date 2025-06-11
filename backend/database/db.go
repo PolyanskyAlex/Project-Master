@@ -13,30 +13,32 @@ import (
 
 var DB *pgxpool.Pool
 
-func ConnectDB(databaseURL string) {
+func ConnectDB(databaseURL string) error {
 	var err error
 	DB, err = pgxpool.New(context.Background(), databaseURL)
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
+		return fmt.Errorf("unable to connect to database: %v", err)
 	}
 
 	err = DB.Ping(context.Background())
 	if err != nil {
-		log.Fatalf("Cannot ping database: %v\n", err)
+		return fmt.Errorf("cannot ping database: %v", err)
 	}
 
 	log.Println("Connected to database!")
+	return nil
 }
 
-func RunMigrations(databaseURL, migrationsPath string) {
+func RunMigrations(databaseURL, migrationsPath string) error {
 	m, err := migrate.New(fmt.Sprintf("file://%s", migrationsPath), databaseURL)
 	if err != nil {
-		log.Fatalf("Error creating migrate instance: %v\n", err)
+		return fmt.Errorf("error creating migrate instance: %v", err)
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Error running migrations: %v\n", err)
+		return fmt.Errorf("error running migrations: %v", err)
 	}
 
 	log.Println("Database migrations applied!")
+	return nil
 }
