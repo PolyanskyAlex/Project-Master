@@ -4,6 +4,9 @@ import (
 	"net/http"
 
 	"project-manager/config"
+	"project-manager/database"
+	"project-manager/handlers"
+	"project-manager/repositories"
 	"project-manager/services"
 
 	"github.com/go-chi/chi/v5"
@@ -31,10 +34,41 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 	})
 
 	// Защищенные маршруты
-	if cfg.APIKey != "" {
+	if cfg.APIKey != "" && database.DB != nil {
 		authService := services.NewAuthService(cfg)
+
+		// Инициализация репозиториев и сервисов
+		fbRepo := repositories.NewFunctionalBlockRepository(database.DB)
+		fbService := services.NewFunctionalBlockService(fbRepo)
+		fbHandler := handlers.NewFunctionalBlockHandler(fbService)
+
+		projectRepo := repositories.NewProjectRepository(database.DB)
+		projectService := services.NewProjectService(projectRepo)
+		projectHandler := handlers.NewProjectHandler(projectService)
+
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware(authService))
+
+			// API v1 маршруты
+			r.Route("/api/v1", func(r chi.Router) {
+				// Функциональные блоки
+				r.Route("/functional-blocks", func(r chi.Router) {
+					r.Get("/", fbHandler.GetAllFunctionalBlocks)
+					r.Post("/", fbHandler.CreateFunctionalBlock)
+					r.Get("/{id}", fbHandler.GetFunctionalBlock)
+					r.Put("/{id}", fbHandler.UpdateFunctionalBlock)
+					r.Delete("/{id}", fbHandler.DeleteFunctionalBlock)
+				})
+
+				// Проекты
+				r.Route("/projects", func(r chi.Router) {
+					r.Get("/", projectHandler.GetAllProjects)
+					r.Post("/", projectHandler.CreateProject)
+					r.Get("/{id}", projectHandler.GetProject)
+					r.Put("/{id}", projectHandler.UpdateProject)
+					r.Delete("/{id}", projectHandler.DeleteProject)
+				})
+			})
 
 			// Тестовый защищенный эндпоинт
 			r.Get("/api/test", func(w http.ResponseWriter, r *http.Request) {
