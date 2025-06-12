@@ -307,6 +307,7 @@
 - **Ответственный:** AI-Frontend-Agent
 - **Описание:** Написать тесты для Frontend компонентов
 - **Результат:** Качественное тестирование UI
+- **Файл задачи:** [tasks/task-5.3.0.txt](tasks/task-5.3.0.txt)
 - **Резюме:** Создана комплексная система тестирования Frontend: установлены библиотеки MSW и axios-mock-adapter, создана структура тестов (__tests__/components, hooks, services, pages, utils, integration, e2e), разработаны тестовые утилиты (test-utils.tsx с провайдерами, api-mocks.ts с MSW handlers, msw-setup.ts), созданы unit тесты для компонентов (LoadingSpinner, ErrorMessage), сервисов (functionalBlockService), хуков (useFunctionalBlocks), integration тесты для страниц (FunctionalBlocks), E2E тесты для пользовательских сценариев, настроены скрипты тестирования (test:coverage, test:unit, test:integration, test:e2e, test:ci), создана документация по тестированию с лучшими практиками, настроен Jest с покрытием кода 80%, добавлены полифиллы для тестовой среды
 
 #### 5.4.0: Разработка и запуск Unit/Integration-тестов для Расширения IDE
