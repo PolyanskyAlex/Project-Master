@@ -46,6 +46,27 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 		projectService := services.NewProjectService(projectRepo)
 		projectHandler := handlers.NewProjectHandler(projectService)
 
+		taskRepo := repositories.NewTaskRepository(database.DB)
+
+		logRepo := repositories.NewOperationLogRepository(database.DB)
+		logService := services.NewOperationLogService(logRepo, taskRepo)
+		logHandler := handlers.NewOperationLogHandler(logService)
+
+		commentRepo := repositories.NewCommentRepository(database.DB)
+		commentService := services.NewCommentService(commentRepo, taskRepo, logService)
+		commentHandler := handlers.NewCommentHandler(commentService)
+
+		taskService := services.NewTaskService(taskRepo, projectRepo, fbRepo, logService)
+		taskHandler := handlers.NewTaskHandler(taskService)
+
+		documentRepo := repositories.NewDocumentRepository(database.DB)
+		documentService := services.NewDocumentService(documentRepo, projectRepo)
+		documentHandler := handlers.NewDocumentHandler(documentService)
+
+		planRepo := repositories.NewProjectPlanRepository(database.DB)
+		planService := services.NewProjectPlanService(planRepo, projectRepo, taskRepo)
+		planHandler := handlers.NewProjectPlanHandler(planService)
+
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware(authService))
 
@@ -67,6 +88,76 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 					r.Get("/{id}", projectHandler.GetProject)
 					r.Put("/{id}", projectHandler.UpdateProject)
 					r.Delete("/{id}", projectHandler.DeleteProject)
+
+					// План разработки проекта
+					r.Route("/{projectID}/plan", func(r chi.Router) {
+						r.Get("/", planHandler.GetProjectPlan)
+						r.Get("/stats", planHandler.GetProjectPlanStats)
+						r.Put("/reorder", planHandler.ReorderTasks)
+
+						// Управление задачами в плане
+						r.Route("/tasks", func(r chi.Router) {
+							r.Post("/batch", planHandler.AddMultipleTasksToPlan)
+							r.Delete("/batch", planHandler.RemoveMultipleTasksFromPlan)
+
+							r.Route("/{taskID}", func(r chi.Router) {
+								r.Post("/", planHandler.AddTaskToPlan)
+								r.Delete("/", planHandler.RemoveTaskFromPlan)
+								r.Get("/check", planHandler.IsTaskInPlan)
+								r.Get("/position", planHandler.GetTaskPosition)
+								r.Put("/position", planHandler.MoveTaskToPosition)
+							})
+						})
+					})
+				})
+
+				// Задачи
+				r.Route("/tasks", func(r chi.Router) {
+					r.Get("/", taskHandler.GetAllTasks)
+					r.Post("/", taskHandler.CreateTask)
+					r.Get("/by-status", taskHandler.GetTasksByStatus)
+					r.Get("/statuses", taskHandler.GetValidStatuses)
+					r.Get("/priorities", taskHandler.GetValidPriorities)
+					r.Get("/types", taskHandler.GetValidTypes)
+					r.Get("/number/{number}", taskHandler.GetTaskByNumber)
+					r.Get("/project/{projectId}", taskHandler.GetTasksByProject)
+					r.Get("/functional-block/{functionalBlockId}", taskHandler.GetTasksByFunctionalBlock)
+					r.Get("/{id}", taskHandler.GetTask)
+					r.Put("/{id}", taskHandler.UpdateTask)
+					r.Delete("/{id}", taskHandler.DeleteTask)
+				})
+
+				// Комментарии
+				r.Route("/comments", func(r chi.Router) {
+					r.Get("/", commentHandler.GetAllComments)
+					r.Post("/", commentHandler.CreateComment)
+					r.Get("/task/{taskId}", commentHandler.GetCommentsByTask)
+					r.Get("/{id}", commentHandler.GetComment)
+					r.Delete("/{id}", commentHandler.DeleteComment)
+				})
+
+				// Логи операций
+				r.Route("/operation-logs", func(r chi.Router) {
+					r.Get("/", logHandler.GetAllLogs)
+					r.Get("/by-type", logHandler.GetLogsByOperationType)
+					r.Get("/by-user", logHandler.GetLogsByUser)
+					r.Get("/operation-types", logHandler.GetValidOperationTypes)
+					r.Get("/task/{taskId}", logHandler.GetLogsByTask)
+					r.Get("/{id}", logHandler.GetLog)
+				})
+
+				// Документы
+				r.Route("/documents", func(r chi.Router) {
+					r.Get("/", documentHandler.GetAllDocuments)
+					r.Post("/", documentHandler.CreateDocument)
+					r.Get("/by-type", documentHandler.GetDocumentsByType)
+					r.Get("/document-types", documentHandler.GetValidDocumentTypes)
+					r.Get("/project/{projectId}", documentHandler.GetDocumentsByProject)
+					r.Get("/project/{projectId}/agent-editable", documentHandler.GetAgentEditableDocumentsByProject)
+					r.Get("/project/{projectId}/type/{type}", documentHandler.GetDocumentsByProjectAndType)
+					r.Get("/{id}", documentHandler.GetDocument)
+					r.Put("/{id}", documentHandler.UpdateDocument)
+					r.Delete("/{id}", documentHandler.DeleteDocument)
 				})
 			})
 

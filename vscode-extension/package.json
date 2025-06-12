@@ -1,0 +1,733 @@
+{
+  "name": "project-master-extension",
+  "displayName": "Project Master",
+  "description": "VS Code extension for Project Master - AI-driven project management system with enhanced Tree View navigation",
+  "version": "0.4.0",
+  "publisher": "project-master",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Extension Packs"
+  ],
+  "keywords": [
+    "project management",
+    "tasks",
+    "ai",
+    "productivity",
+    "development"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "projectMaster.setupWizard",
+        "title": "Setup Wizard",
+        "category": "Project Master"
+      },
+      {
+        "command": "projectMaster.quickSetup",
+        "title": "Quick Setup",
+        "category": "Project Master"
+      },
+      {
+        "command": "projectMaster.testConnection",
+        "title": "Test Connection",
+        "category": "Project Master"
+      },
+      {
+        "command": "projectMaster.showStatus",
+        "title": "Show Status",
+        "category": "Project Master"
+      },
+      {
+        "command": "projectMaster.selectProject",
+        "title": "Select Project",
+        "category": "Project Master"
+      },
+      {
+        "command": "projectMaster.refreshProjects",
+        "title": "Refresh Projects",
+        "category": "Project Master",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "projectMaster.refreshTasks",
+        "title": "Refresh Tasks",
+        "category": "Project Master",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "projectMaster.syncPlan",
+        "title": "Sync Development Plan",
+        "category": "Project Master",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "projectMaster.createProject",
+        "title": "Create New Project",
+        "category": "Project Master",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectMaster.createTask",
+        "title": "Create New Task",
+        "category": "Project Master",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectMaster.openTask",
+        "title": "Open Task",
+        "category": "Project Master"
+      },
+      {
+        "command": "projectMaster.openWebUI",
+        "title": "Open Web Interface",
+        "category": "Project Master",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "projectMaster.projects.create",
+        "title": "Create Project",
+        "category": "Project Master",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectMaster.projects.edit",
+        "title": "Edit Project",
+        "category": "Project Master",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "projectMaster.projects.delete",
+        "title": "Delete Project",
+        "category": "Project Master",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "projectMaster.projects.duplicate",
+        "title": "Duplicate Project",
+        "category": "Project Master",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "projectMaster.projects.changeStatus",
+        "title": "Change Project Status",
+        "category": "Project Master",
+        "icon": "$(circle-outline)"
+      },
+      {
+        "command": "projectMaster.projects.viewDetails",
+        "title": "View Project Details",
+        "category": "Project Master",
+        "icon": "$(info)"
+      },
+      {
+        "command": "projectMaster.projects.export",
+        "title": "Export Project",
+        "category": "Project Master",
+        "icon": "$(export)"
+      },
+      {
+        "command": "projectMaster.tasks.create",
+        "title": "Create Task",
+        "category": "Project Master",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectMaster.tasks.edit",
+        "title": "Edit Task",
+        "category": "Project Master",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "projectMaster.tasks.delete",
+        "title": "Delete Task",
+        "category": "Project Master",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "projectMaster.tasks.duplicate",
+        "title": "Duplicate Task",
+        "category": "Project Master",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "projectMaster.tasks.changeStatus",
+        "title": "Change Task Status",
+        "category": "Project Master",
+        "icon": "$(circle-outline)"
+      },
+      {
+        "command": "projectMaster.tasks.changePriority",
+        "title": "Change Task Priority",
+        "category": "Project Master",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "projectMaster.tasks.assign",
+        "title": "Assign Task",
+        "category": "Project Master",
+        "icon": "$(person)"
+      },
+      {
+        "command": "projectMaster.tasks.setDueDate",
+        "title": "Set Due Date",
+        "category": "Project Master",
+        "icon": "$(calendar)"
+      },
+      {
+        "command": "projectMaster.tasks.addTime",
+        "title": "Add Time Tracking",
+        "category": "Project Master",
+        "icon": "$(clock)"
+      },
+      {
+        "command": "projectMaster.tasks.viewDetails",
+        "title": "View Task Details",
+        "category": "Project Master",
+        "icon": "$(info)"
+      },
+      {
+        "command": "projectMaster.tasks.export",
+        "title": "Export Tasks",
+        "category": "Project Master",
+        "icon": "$(export)"
+      },
+      {
+        "command": "projectMaster.comments.add",
+        "title": "Add Comment",
+        "category": "Project Master",
+        "icon": "$(comment)"
+      },
+      {
+        "command": "projectMaster.comments.view",
+        "title": "View Comments",
+        "category": "Project Master",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "projectMaster.comments.edit",
+        "title": "Edit Comment",
+        "category": "Project Master",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "projectMaster.comments.delete",
+        "title": "Delete Comment",
+        "category": "Project Master",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "projectMaster.comments.reply",
+        "title": "Reply to Comment",
+        "category": "Project Master",
+        "icon": "$(reply)"
+      },
+      {
+        "command": "projectMaster.comments.quick",
+        "title": "Quick Comment",
+        "category": "Project Master",
+        "icon": "$(comment-add)"
+      },
+      {
+        "command": "projectMaster.refreshAll",
+        "title": "Refresh All Data",
+        "category": "Project Master",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "projectMaster.searchTasks",
+        "title": "Search Tasks",
+        "category": "Project Master",
+        "icon": "$(search)"
+      },
+      {
+        "command": "projectMaster.mcp.execute",
+        "title": "Execute MCP File",
+        "category": "Project Master",
+        "icon": "$(play)"
+      },
+      {
+        "command": "projectMaster.mcp.validate",
+        "title": "Validate MCP File",
+        "category": "Project Master",
+        "icon": "$(check)"
+      },
+      {
+        "command": "projectMaster.mcp.create",
+        "title": "Create MCP File",
+        "category": "Project Master",
+        "icon": "$(file-add)"
+      },
+      {
+        "command": "projectMaster.mcp.findFiles",
+        "title": "Find MCP Files",
+        "category": "Project Master",
+        "icon": "$(search)"
+      },
+      {
+        "command": "projectMaster.cache.showStats",
+        "title": "Show Cache Statistics",
+        "category": "Project Master",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "projectMaster.cache.clear",
+        "title": "Clear Cache",
+        "category": "Project Master",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "projectMaster.cache.preload",
+        "title": "Preload Cache",
+        "category": "Project Master",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "projectMaster.cache.export",
+        "title": "Export Cache Data",
+        "category": "Project Master",
+        "icon": "$(export)"
+      },
+      {
+        "command": "projectMaster.cache.manage",
+        "title": "Manage Cache",
+        "category": "Project Master",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "projectMaster.pushTaskToPlan",
+        "title": "Push Current Task to Plan",
+        "category": "Project Master",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "projectMaster.createTasksFromTodos",
+        "title": "Create Tasks from TODOs",
+        "category": "Project Master",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "projectMaster.exportPlan",
+        "title": "Export Development Plan",
+        "category": "Project Master",
+        "icon": "$(export)"
+      },
+      {
+        "command": "projectMaster.pushCurrentContext",
+        "title": "Push Current Context",
+        "category": "Project Master",
+        "icon": "$(arrow-circle-up)"
+      },
+      {
+        "command": "projectMaster.quickAddTask",
+        "title": "Quick Add Task",
+        "category": "Project Master",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectMaster.filterByStatus",
+        "title": "Filter Tasks by Status",
+        "category": "Project Master",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "projectMaster.clearFilters",
+        "title": "Clear Filters",
+        "category": "Project Master",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "projectMaster.showStats",
+        "title": "Show Statistics",
+        "category": "Project Master",
+        "icon": "$(graph)"
+      }
+    ],
+    "views": {
+      "projectMaster": [
+        {
+          "id": "projectMaster.projects",
+          "name": "Projects",
+          "when": "true"
+        },
+        {
+          "id": "projectMaster.tasks",
+          "name": "Tasks",
+          "when": "true"
+        },
+        {
+          "id": "projectMaster.plan",
+          "name": "Development Plan",
+          "when": "true"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "projectMaster",
+          "title": "Project Master",
+          "icon": "$(project)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "projectMaster.refreshProjects",
+          "when": "view == projectMaster.projects",
+          "group": "navigation"
+        },
+        {
+          "command": "projectMaster.createProject",
+          "when": "view == projectMaster.projects",
+          "group": "navigation"
+        },
+        {
+          "command": "projectMaster.projects.create",
+          "when": "view == projectMaster.projects",
+          "group": "navigation"
+        },
+        {
+          "command": "projectMaster.refreshTasks",
+          "when": "view == projectMaster.tasks",
+          "group": "navigation"
+        },
+        {
+          "command": "projectMaster.createTask",
+          "when": "view == projectMaster.tasks",
+          "group": "navigation"
+        },
+        {
+          "command": "projectMaster.tasks.export",
+          "when": "view == projectMaster.tasks",
+          "group": "navigation"
+        },
+        {
+          "command": "projectMaster.searchTasks",
+          "when": "view == projectMaster.tasks",
+          "group": "navigation"
+        },
+        {
+          "command": "projectMaster.syncPlan",
+          "when": "view == projectMaster.plan",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "projectMaster.selectProject",
+          "when": "view == projectMaster.projects && viewItem == project",
+          "group": "inline"
+        },
+        {
+          "command": "projectMaster.projects.edit",
+          "when": "view == projectMaster.projects && viewItem == project",
+          "group": "1_edit"
+        },
+        {
+          "command": "projectMaster.projects.duplicate",
+          "when": "view == projectMaster.projects && viewItem == project",
+          "group": "1_edit"
+        },
+        {
+          "command": "projectMaster.projects.changeStatus",
+          "when": "view == projectMaster.projects && viewItem == project",
+          "group": "2_status"
+        },
+        {
+          "command": "projectMaster.projects.viewDetails",
+          "when": "view == projectMaster.projects && viewItem == project",
+          "group": "3_view"
+        },
+        {
+          "command": "projectMaster.projects.export",
+          "when": "view == projectMaster.projects && viewItem == project",
+          "group": "3_view"
+        },
+        {
+          "command": "projectMaster.projects.delete",
+          "when": "view == projectMaster.projects && viewItem == project",
+          "group": "4_delete"
+        },
+        {
+          "command": "projectMaster.openTask",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "inline"
+        },
+        {
+          "command": "projectMaster.tasks.edit",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "1_edit"
+        },
+        {
+          "command": "projectMaster.tasks.duplicate",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "1_edit"
+        },
+        {
+          "command": "projectMaster.tasks.changeStatus",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "2_status"
+        },
+        {
+          "command": "projectMaster.tasks.changePriority",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "2_status"
+        },
+        {
+          "command": "projectMaster.tasks.assign",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "2_status"
+        },
+        {
+          "command": "projectMaster.tasks.setDueDate",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "2_status"
+        },
+        {
+          "command": "projectMaster.tasks.addTime",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "3_time"
+        },
+        {
+          "command": "projectMaster.comments.add",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "3_time"
+        },
+        {
+          "command": "projectMaster.comments.view",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "3_time"
+        },
+        {
+          "command": "projectMaster.tasks.viewDetails",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "4_view"
+        },
+        {
+          "command": "projectMaster.tasks.delete",
+          "when": "view == projectMaster.tasks && viewItem == task",
+          "group": "5_delete"
+        },
+        {
+          "command": "projectMaster.openTask",
+          "when": "view == projectMaster.plan && viewItem == planTask",
+          "group": "inline"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "projectMaster.mcp.execute",
+          "when": "resourceExtname == .mcp",
+          "group": "1_mcp"
+        },
+        {
+          "command": "projectMaster.mcp.validate",
+          "when": "resourceExtname == .mcp",
+          "group": "1_mcp"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "projectMaster.setupWizard"
+        },
+        {
+          "command": "projectMaster.quickSetup"
+        },
+        {
+          "command": "projectMaster.testConnection"
+        },
+        {
+          "command": "projectMaster.showStatus"
+        },
+        {
+          "command": "projectMaster.refreshProjects"
+        },
+        {
+          "command": "projectMaster.refreshTasks"
+        },
+        {
+          "command": "projectMaster.syncPlan"
+        },
+        {
+          "command": "projectMaster.createProject"
+        },
+        {
+          "command": "projectMaster.createTask"
+        },
+        {
+          "command": "projectMaster.openWebUI"
+        },
+        {
+          "command": "projectMaster.refreshAll"
+        },
+        {
+          "command": "projectMaster.searchTasks"
+        },
+        {
+          "command": "projectMaster.filterByStatus"
+        },
+        {
+          "command": "projectMaster.clearFilters"
+        },
+        {
+          "command": "projectMaster.showStats"
+        },
+        {
+          "command": "projectMaster.mcp.execute"
+        },
+        {
+          "command": "projectMaster.mcp.validate"
+        },
+        {
+          "command": "projectMaster.mcp.create"
+        },
+        {
+          "command": "projectMaster.mcp.findFiles"
+        },
+        {
+          "command": "projectMaster.cache.showStats"
+        },
+        {
+          "command": "projectMaster.cache.clear"
+        },
+        {
+          "command": "projectMaster.cache.preload"
+        },
+        {
+          "command": "projectMaster.cache.export"
+        },
+        {
+          "command": "projectMaster.cache.manage"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Project Master",
+      "properties": {
+        "projectMaster.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "Project Master API URL"
+        },
+        "projectMaster.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Project Master API Key"
+        },
+        "projectMaster.webUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "Project Master Web UI URL"
+        },
+        "projectMaster.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh data every 30 seconds"
+        },
+        "projectMaster.refreshInterval": {
+          "type": "number",
+          "default": 30000,
+          "description": "Auto refresh interval in milliseconds"
+        },
+        "projectMaster.defaultProject": {
+          "type": "string",
+          "default": "",
+          "description": "Default project ID for new tasks"
+        },
+        "projectMaster.enableNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable desktop notifications"
+        },
+        "projectMaster.logLevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "default": "info",
+          "description": "Logging level"
+        },
+        "projectMaster.cache.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable caching for improved performance"
+        },
+        "projectMaster.cache.maxSize": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 100,
+          "maximum": 10000,
+          "description": "Maximum number of cache entries"
+        },
+        "projectMaster.cache.defaultTtl": {
+          "type": "number",
+          "default": 300000,
+          "minimum": 60000,
+          "maximum": 3600000,
+          "description": "Default cache TTL in milliseconds (5 minutes)"
+        },
+        "projectMaster.cache.preloadOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preload frequently used data on extension startup"
+        },
+        "projectMaster.cache.autoCleanup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically clean up expired cache entries"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "mocha out/test/suite/**/*.test.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.2",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "16.x",
+    "@types/sinon": "^17.0.4",
+    "@types/vscode": "^1.100.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.2.0",
+    "chai": "^5.2.0",
+    "eslint": "^8.28.0",
+    "mocha": "^11.6.0",
+    "sinon": "^20.0.0",
+    "typescript": "^4.9.4",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/project-master.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/project-master/issues"
+  },
+  "homepage": "https://github.com/your-org/project-master#readme",
+  "license": "MIT"
+}

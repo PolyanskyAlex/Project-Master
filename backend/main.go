@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	"project-manager/config"
 	"project-manager/database"
@@ -26,7 +25,7 @@ func main() {
 			fmt.Println("Continuing without database...")
 		} else {
 			// Применение миграций
-			migrationsPath, _ := filepath.Abs("database/migrations")
+			migrationsPath := "./database/migrations"
 			err = database.RunMigrations(cfg.DatabaseURL, migrationsPath)
 			if err != nil {
 				fmt.Printf("Migration failed: %v\n", err)
