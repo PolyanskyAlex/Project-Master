@@ -121,6 +121,11 @@ export const DocumentForm: React.FC<DocumentFormProps> = ({
     return labels[type] || type;
   };
 
+  // const getProjectName = (projectId: string): string => {
+  //   const project = (projects || []).find(p => p.id === projectId);
+  //   return project?.name || 'Неизвестный проект';
+  // };
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
@@ -147,7 +152,7 @@ export const DocumentForm: React.FC<DocumentFormProps> = ({
                     label="Проект"
                     disabled={loading}
                   >
-                    {projects.map((project) => (
+                    {(projects || []).map((project) => (
                       <MenuItem key={project.id} value={project.id}>
                         {project.name}
                       </MenuItem>
@@ -186,7 +191,15 @@ export const DocumentForm: React.FC<DocumentFormProps> = ({
                   <Select
                     {...field}
                     label="Тип документа"
-                    disabled={loading}
+                    disabled={loading || documentTypes.length === 0}
+                    value={documentTypes.length === 0 ? '' : field.value}
+                    onChange={e => {
+                      if (documentTypes.length === 0) {
+                        field.onChange('');
+                      } else {
+                        field.onChange(e.target.value);
+                      }
+                    }}
                   >
                     {documentTypes.map((type) => (
                       <MenuItem key={type} value={type}>

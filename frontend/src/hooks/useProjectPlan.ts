@@ -187,7 +187,7 @@ export const useProjectPlan = (projectId?: string) => {
   }, [plan]);
 
   return {
-    plan,
+    plan: plan ? plan : { items: [] },
     stats,
     loading,
     error,

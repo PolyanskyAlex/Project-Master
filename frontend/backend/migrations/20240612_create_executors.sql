@@ -1,0 +1,1 @@
+-- Создание таблицы исполнителей\nCREATE TABLE IF NOT EXISTS executors (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(100) NOT NULL UNIQUE,\n    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);

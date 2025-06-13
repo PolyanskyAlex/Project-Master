@@ -21,9 +21,6 @@ import {
   Task,
   CreateTaskRequest,
   UpdateTaskRequest,
-  TaskStatus,
-  TaskPriority,
-  TaskType,
   FilterParams,
 } from '../types/api';
 
@@ -183,14 +180,6 @@ const Tasks: React.FC = () => {
             label="Проект ID"
             value={filters.projectId || ''}
             onChange={(e) => handleFilterChange({ ...filters, projectId: e.target.value || undefined })}
-            sx={{ minWidth: 150 }}
-          />
-
-          <TextField
-            size="small"
-            label="Функц. блок ID"
-            value={filters.functionalBlockId || ''}
-            onChange={(e) => handleFilterChange({ ...filters, functionalBlockId: e.target.value || undefined })}
             sx={{ minWidth: 150 }}
           />
         </Box>

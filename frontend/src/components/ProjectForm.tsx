@@ -12,7 +12,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Autocomplete,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -23,10 +22,9 @@ import {
   UpdateProjectRequest,
   ProjectStatus,
 } from '../types/api';
-import { useFunctionalBlocks } from '../hooks/useFunctionalBlocks';
 
 // Схема валидации
-const schema = yup.object({
+const schema = yup.object().shape({
   name: yup
     .string()
     .required('Название обязательно')
@@ -34,17 +32,13 @@ const schema = yup.object({
     .max(200, 'Название не должно превышать 200 символов'),
   description: yup
     .string()
-    .required('Описание обязательно')
-    .min(10, 'Описание должно содержать минимум 10 символов')
-    .max(1000, 'Описание не должно превышать 1000 символов'),
-  functionalBlockId: yup
-    .string()
-    .required('Функциональный блок обязателен'),
+    .max(1000, 'Описание не должно превышать 1000 символов')
+    .notRequired(),
   status: yup
     .mixed<ProjectStatus>()
     .required('Статус обязателен')
     .oneOf(['Планирование', 'В разработке', 'Тестирование', 'Завершен', 'Приостановлен'], 'Неверный статус'),
-});
+}) as yup.ObjectSchema<CreateProjectRequest>;
 
 const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
   { value: 'Планирование', label: 'Планирование' },
@@ -72,7 +66,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   error = null,
 }) => {
   const isEdit = !!project;
-  const { functionalBlocks, loading: functionalBlocksLoading } = useFunctionalBlocks();
 
   const {
     control,
@@ -84,7 +77,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     defaultValues: {
       name: '',
       description: '',
-      functionalBlockId: '',
       status: 'Планирование' as ProjectStatus,
     },
   });
@@ -95,14 +87,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       reset({
         name: project.name,
         description: project.description,
-        functionalBlockId: project.functionalBlockId,
         status: project.status,
       });
     } else {
       reset({
         name: '',
         description: '',
-        functionalBlockId: '',
         status: 'Планирование' as ProjectStatus,
       });
     }
@@ -176,30 +166,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                   error={!!errors.description}
                   helperText={errors.description?.message}
                   disabled={isSubmitting || loading}
-                />
-              )}
-            />
-
-            <Controller
-              name="functionalBlockId"
-              control={control}
-              render={({ field }) => (
-                <Autocomplete
-                  {...field}
-                  options={functionalBlocks}
-                  getOptionLabel={(option) => `${option.name} (${option.prefix})`}
-                  value={functionalBlocks.find(fb => fb.id === field.value) || null}
-                  onChange={(_, value) => field.onChange(value?.id || '')}
-                  loading={functionalBlocksLoading}
-                  disabled={isSubmitting || loading || functionalBlocksLoading}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Функциональный блок"
-                      error={!!errors.functionalBlockId}
-                      helperText={errors.functionalBlockId?.message}
-                    />
-                  )}
                 />
               )}
             />

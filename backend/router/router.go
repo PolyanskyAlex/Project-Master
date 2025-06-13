@@ -12,6 +12,20 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// CORS middleware
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func AuthMiddleware(authService *services.AuthService) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +41,9 @@ func AuthMiddleware(authService *services.AuthService) func(next http.Handler) h
 
 func NewRouter(cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
+
+	// Добавляем CORS middleware
+	r.Use(corsMiddleware)
 
 	// Публичные маршруты
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +83,10 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 		planRepo := repositories.NewProjectPlanRepository(database.DB)
 		planService := services.NewProjectPlanService(planRepo, projectRepo, taskRepo)
 		planHandler := handlers.NewProjectPlanHandler(planService)
+
+		executorRepo := repositories.NewExecutorRepository(database.DB)
+		executorService := services.NewExecutorService(executorRepo)
+		executorHandler := handlers.NewExecutorHandler(executorService)
 
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware(authService))
@@ -158,6 +179,13 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 					r.Get("/{id}", documentHandler.GetDocument)
 					r.Put("/{id}", documentHandler.UpdateDocument)
 					r.Delete("/{id}", documentHandler.DeleteDocument)
+				})
+
+				// Исполнители
+				// /api/v1/executors
+				r.Route("/executors", func(r chi.Router) {
+					r.Get("/", executorHandler.GetAllExecutors)
+					r.Post("/", executorHandler.CreateExecutor)
 				})
 			})
 

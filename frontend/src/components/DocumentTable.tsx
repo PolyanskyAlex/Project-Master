@@ -90,7 +90,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
     return content.substring(0, maxLength) + '...';
   };
 
-  if (documents.length === 0) {
+  if (!documents || documents.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary">
@@ -119,7 +119,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {documents.map((document) => (
+            {(documents || []).map((document) => (
               <TableRow key={document.id} hover>
                 <TableCell>
                   <Typography variant="subtitle2" fontWeight="medium">

@@ -154,11 +154,13 @@ const DevelopmentPlan: React.FC = () => {
     }
   };
 
-  const getSelectedProject = () => {
-    return projects.find(p => p.id === selectedProjectId);
-  };
+  // const getSelectedProject = () => {
+  //   return projects.find(p => p.id === selectedProjectId);
+  // };
 
-  const selectedProject = getSelectedProject();
+  // const selectedProject = (projects || []).find(p => p.id === selectedProjectId);
+
+  const items = plan && plan.items ? plan.items : [];
 
   return (
     <Box>
@@ -265,12 +267,12 @@ const DevelopmentPlan: React.FC = () => {
 
       {/* План разработки */}
       {selectedProjectId ? (
-        loading && !plan ? (
+        loading && items.length === 0 ? (
           <LoadingSpinner message="Загрузка плана разработки..." />
-        ) : plan && plan.items.length > 0 ? (
+        ) : items.length > 0 ? (
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
-              План разработки проекта "{selectedProject?.name}"
+              План разработки проекта "{(projects || []).find(p => p.id === selectedProjectId)?.name || ''}"
             </Typography>
             
             {hasUnsavedChanges && (
@@ -285,10 +287,10 @@ const DevelopmentPlan: React.FC = () => {
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={plan.items.map(item => item.id)}
+                items={items.map(item => item.id)}
                 strategy={verticalListSortingStrategy}
               >
-                {plan.items.map((item, index) => (
+                {(items || []).map((item, index) => (
                   <ProjectPlanItemComponent
                     key={item.id}
                     item={item}

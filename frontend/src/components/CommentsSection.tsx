@@ -172,7 +172,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
           <CircularProgress />
         </Box>
-      ) : comments.length === 0 ? (
+      ) : (comments && comments.length === 0) ? (
         <Box sx={{ textAlign: 'center', py: 3 }}>
           <Typography variant="body2" color="text.secondary">
             Комментариев пока нет. Будьте первым!
@@ -180,7 +180,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         </Box>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {comments.map((comment, index) => (
+          {(comments || []).map((comment, index) => (
             <Box key={comment.id}>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Avatar
@@ -207,7 +207,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                   </Typography>
                 </Box>
               </Box>
-              {index < comments.length - 1 && <Divider sx={{ mt: 2 }} />}
+              {index < (comments ? comments.length : 0) - 1 && <Divider sx={{ mt: 2 }} />}
             </Box>
           ))}
         </Box>

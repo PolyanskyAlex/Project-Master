@@ -21,7 +21,7 @@ import {
   Alert
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { Task, TaskStatus, TaskPriority, TaskType } from '../types/api';
+import { TaskStatus, TaskPriority, TaskType } from '../types/api';
 import { useTasks } from '../hooks/useTasks';
 
 interface AddTasksToPlanDialogProps {

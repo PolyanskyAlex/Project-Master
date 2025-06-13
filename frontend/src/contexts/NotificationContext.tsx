@@ -44,6 +44,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     return `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
+  const hideNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  }, []);
+
   const showNotification = useCallback((
     message: string,
     type: AlertColor = 'info',
@@ -71,7 +75,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         hideNotification(id);
       }, duration);
     }
-  }, [generateId, maxNotifications]);
+  }, [generateId, maxNotifications, hideNotification]);
 
   const showSuccess = useCallback((message: string, duration?: number) => {
     showNotification(message, 'success', duration);
@@ -88,10 +92,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const showInfo = useCallback((message: string, duration?: number) => {
     showNotification(message, 'info', duration);
   }, [showNotification]);
-
-  const hideNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
-  }, []);
 
   const clearAllNotifications = useCallback(() => {
     setNotifications([]);

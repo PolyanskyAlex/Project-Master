@@ -115,7 +115,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
     }
   };
 
-  if (tasks.length === 0) {
+  if (!tasks || tasks.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary">
@@ -137,7 +137,6 @@ const TaskTable: React.FC<TaskTableProps> = ({
               <TableCell>Номер</TableCell>
               <TableCell>Название</TableCell>
               <TableCell>Проект</TableCell>
-              <TableCell>Функц. блок</TableCell>
               <TableCell>Статус</TableCell>
               <TableCell>Приоритет</TableCell>
               <TableCell>Тип</TableCell>
@@ -147,7 +146,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {tasks.map((task) => (
+            {(tasks || []).map((task) => (
               <TableRow key={task.id} hover>
                 <TableCell>
                   <Typography variant="body2" fontWeight="medium">
@@ -162,11 +161,6 @@ const TaskTable: React.FC<TaskTableProps> = ({
                 <TableCell>
                   <Typography variant="body2">
                     {task.projectId}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {task.functionalBlockId}
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -306,15 +300,6 @@ const TaskTable: React.FC<TaskTableProps> = ({
                         {taskToView.projectId}
                       </Typography>
                     </Box>
-
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Функциональный блок
-                      </Typography>
-                      <Typography variant="body1">
-                        {taskToView.functionalBlockId}
-                      </Typography>
-                    </Box>
                   </Box>
 
                   <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -360,24 +345,6 @@ const TaskTable: React.FC<TaskTableProps> = ({
                       </Typography>
                       <Typography variant="body1">
                         {taskToView.assignedTo || 'Не назначен'}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Оценка времени
-                      </Typography>
-                      <Typography variant="body1">
-                        {taskToView.estimatedHours ? `${taskToView.estimatedHours} ч.` : 'Не указана'}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Срок выполнения
-                      </Typography>
-                      <Typography variant="body1">
-                        {taskToView.dueDate ? formatDate(taskToView.dueDate) : 'Не указан'}
                       </Typography>
                     </Box>
                   </Box>

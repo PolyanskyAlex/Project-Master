@@ -30,10 +30,12 @@ export const useComments = (taskId: string): UseCommentsReturn => {
       setLoading(true);
       setError(null);
       const data = await commentService.getByTaskId(taskId);
-      setComments(data);
+      const commentsArray = Array.isArray(data) ? data : [];
+      setComments(commentsArray);
     } catch (err: any) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Ошибка загрузки комментариев');
+      setComments([]);
     } finally {
       setLoading(false);
     }

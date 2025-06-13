@@ -80,7 +80,7 @@ const FunctionalBlockTable: React.FC<FunctionalBlockTableProps> = ({
     }
   };
 
-  if (functionalBlocks.length === 0 && !loading) {
+  if (!functionalBlocks || (functionalBlocks.length === 0 && !loading)) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary">
@@ -133,7 +133,7 @@ const FunctionalBlockTable: React.FC<FunctionalBlockTableProps> = ({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {block.description}
+                    {block.description ? block.description : '-'}
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -230,7 +230,9 @@ const FunctionalBlockTable: React.FC<FunctionalBlockTableProps> = ({
                 <Typography variant="subtitle2" color="text.secondary">
                   Описание
                 </Typography>
-                <Typography variant="body1">{selectedBlock.description}</Typography>
+                {selectedBlock.description && (
+                  <Typography variant="body1">{selectedBlock.description}</Typography>
+                )}
               </Box>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">

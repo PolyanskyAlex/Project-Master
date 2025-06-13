@@ -38,8 +38,9 @@ export const useTasks = (initialFilters?: FilterParams): UseTasksReturn => {
         setError(null);
         logger.info('Loading tasks', { filters }, 'Tasks');
         const data = await taskService.getAll(filters);
-        logger.info(`Loaded ${data.length} tasks`, { count: data.length }, 'Tasks');
-        setTasks(data);
+        const tasksArray = Array.isArray(data) ? data : [];
+        logger.info(`Loaded ${tasksArray.length} tasks`, { count: tasksArray.length }, 'Tasks');
+        setTasks(tasksArray);
       },
       'loadTasks'
     );

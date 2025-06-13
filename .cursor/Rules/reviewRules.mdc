@@ -1,0 +1,75 @@
+{
+  "$schema": "https://app.cursor.so/schemas/v1/rules.schema.json",
+  "rules": [
+    {
+      "name": "No hallucinated APIs",
+      "description": "Проверь, что все используемые библиотеки, функции и API действительно существуют. Не должно быть вымышленных методов или импортов.",
+      "importance": "critical",
+      "pattern": ".*",
+      "category": "Correctness"
+    },
+    {
+      "name": "Avoid overengineering",
+      "description": "Не добавляй лишней сложности. Структура кода должна быть оправданной и соразмерной задаче.",
+      "importance": "high",
+      "pattern": ".*",
+      "category": "Simplicity"
+    },
+    {
+      "name": "Ensure modularity",
+      "description": "Код должен быть модульным. Разделяй бизнес-логику, контроллеры, утилиты и инфраструктурные зависимости.",
+      "importance": "medium",
+      "pattern": ".*",
+      "category": "Architecture"
+    },
+    {
+      "name": "Enforce consistent naming",
+      "description": "Именование переменных, функций и классов должно быть логичным и согласованным во всём коде. Без автогенерированных аббревиатур.",
+      "importance": "high",
+      "pattern": ".*",
+      "category": "Style"
+    },
+    {
+      "name": "Avoid redundant code",
+      "description": "Исключи дублирование. Используй переиспользуемые функции и шаблоны.",
+      "importance": "medium",
+      "pattern": ".*",
+      "category": "Efficiency"
+    },
+    {
+      "name": "Check for unhandled errors",
+      "description": "Убедись, что все ошибки и исключения обрабатываются корректно. Не оставляй пустые блоки catch или игнорируемые ошибки.",
+      "importance": "critical",
+      "pattern": ".*",
+      "category": "Reliability"
+    },
+    {
+      "name": "Respect framework conventions",
+      "description": "Соблюдай стандарты и лучшие практики выбранного фреймворка (например, NestJS, React, Next.js и др.).",
+      "importance": "high",
+      "pattern": ".*",
+      "category": "Convention"
+    },
+    {
+      "name": "Add self-check assertions",
+      "description": "Добавь минимальные проверки или комментарии, подтверждающие, что код протестирован или логически завершён. AI должен 'объяснять' свои действия.",
+      "importance": "medium",
+      "pattern": ".*",
+      "category": "Explainability"
+    },
+    {
+      "name": "Security best practices",
+      "description": "Проверь, что в коде нет потенциальных XSS/SQLi/CSRF и других уязвимостей. Не логируй чувствительные данные.",
+      "importance": "critical",
+      "pattern": ".*",
+      "category": "Security"
+    },
+    {
+      "name": "Proper comments on AI assumptions",
+      "description": "AI должен оставлять комментарии к нестандартным решениям, чтобы пояснить, почему они были выбраны. Особенно если есть неоднозначность в задании.",
+      "importance": "medium",
+      "pattern": ".*",
+      "category": "Transparency"
+    }
+  ]
+}

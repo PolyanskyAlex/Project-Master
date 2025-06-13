@@ -18,7 +18,7 @@ export interface FunctionalBlock {
 export interface CreateFunctionalBlockRequest {
   name: string;
   prefix: string;
-  description: string;
+  description?: string;
 }
 
 export interface UpdateFunctionalBlockRequest {
@@ -31,9 +31,8 @@ export interface UpdateFunctionalBlockRequest {
 export interface Project {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   status: ProjectStatus;
-  functionalBlockId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,16 +41,14 @@ export type ProjectStatus = 'Планирование' | 'В разработк�
 
 export interface CreateProjectRequest {
   name: string;
-  description: string;
+  description?: string;
   status: ProjectStatus;
-  functionalBlockId: string;
 }
 
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
   status?: ProjectStatus;
-  functionalBlockId?: string;
 }
 
 // Задачи
@@ -64,12 +61,8 @@ export interface Task {
   priority: TaskPriority;
   type: TaskType;
   projectId: string;
-  functionalBlockId: string;
   parentTaskId?: string;
   assignedTo?: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  dueDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,7 +78,6 @@ export interface CreateTaskRequest {
   priority: TaskPriority;
   type: TaskType;
   projectId: string;
-  functionalBlockId: string;
   parentTaskId?: string;
   assignedTo?: string;
   estimatedHours?: number;
@@ -99,7 +91,6 @@ export interface UpdateTaskRequest {
   priority?: TaskPriority;
   type?: TaskType;
   projectId?: string;
-  functionalBlockId?: string;
   parentTaskId?: string;
   assignedTo?: string;
   estimatedHours?: number;
@@ -227,7 +218,6 @@ export interface FilterParams {
   priority?: string;
   type?: string;
   projectId?: string;
-  functionalBlockId?: string;
 }
 
 // Ошибки API

@@ -12,9 +12,11 @@ export const useDocuments = () => {
     setError(null);
     try {
       const data = await documentService.getAllDocuments();
-      setDocuments(data);
+      const documentsArray = Array.isArray(data) ? data : [];
+      setDocuments(documentsArray);
     } catch (err: any) {
       setError(err.message || 'Ошибка при загрузке документов');
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -25,9 +27,11 @@ export const useDocuments = () => {
     setError(null);
     try {
       const data = await documentService.getDocumentsByProject(projectId);
-      setDocuments(data);
+      const documentsArray = Array.isArray(data) ? data : [];
+      setDocuments(documentsArray);
     } catch (err: any) {
       setError(err.message || 'Ошибка при загрузке документов проекта');
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -38,9 +42,11 @@ export const useDocuments = () => {
     setError(null);
     try {
       const data = await documentService.getDocumentsByType(type);
-      setDocuments(data);
+      const documentsArray = Array.isArray(data) ? data : [];
+      setDocuments(documentsArray);
     } catch (err: any) {
       setError(err.message || 'Ошибка при загрузке документов по типу');
+      setDocuments([]);
     } finally {
       setLoading(false);
     }

@@ -10,11 +10,11 @@ import (
 )
 
 var validProjectStatuses = map[string]bool{
-	"Новый":         true,
-	"В работе":      true,
+	"Планирование":  true,
+	"В разработке":  true,
+	"Тестирование":  true,
 	"Завершен":      true,
 	"Приостановлен": true,
-	"Отменен":       true,
 }
 
 type ProjectService struct {

@@ -26,11 +26,13 @@ export const useFunctionalBlocks = (): UseFunctionalBlocksReturn => {
     try {
       setLoading(true);
       setError(null);
-      const data = await functionalBlockService.getAll();
-      setFunctionalBlocks(data);
+              const data = await functionalBlockService.getAll();
+        const blocksArray = Array.isArray(data) ? data : [];
+        setFunctionalBlocks(blocksArray);
     } catch (err: any) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Ошибка загрузки функциональных блоков');
+      setFunctionalBlocks([]);
     } finally {
       setLoading(false);
     }
@@ -40,7 +42,7 @@ export const useFunctionalBlocks = (): UseFunctionalBlocksReturn => {
     try {
       setError(null);
       const newBlock = await functionalBlockService.create(data);
-      setFunctionalBlocks(prev => [...prev, newBlock]);
+      setFunctionalBlocks(prev => [...(prev || []), newBlock]);
       return newBlock;
     } catch (err: any) {
       const apiError = err as ApiError;

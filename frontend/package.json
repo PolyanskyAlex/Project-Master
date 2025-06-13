@@ -41,6 +41,8 @@
     "test:unit": "react-scripts test --testPathPattern=__tests__/(components|hooks|services|utils)",
     "test:integration": "react-scripts test --testPathPattern=__tests__/integration",
     "test:e2e": "react-scripts test --testPathPattern=__tests__/e2e",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

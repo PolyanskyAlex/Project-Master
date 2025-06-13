@@ -46,14 +46,14 @@ export const ProjectPlanItemComponent: React.FC<ProjectPlanItemProps> = ({
   };
 
   const getStatusColor = (status: string) => {
-    const colors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error'> = {
-      'Новая': 'default',
-      'В работе': 'primary',
-      'Тестирование': 'warning',
-      'Выполнена': 'success',
-      'Отменена': 'error'
-    };
-    return colors[status] || 'default';
+    switch (status) {
+      case 'Планирование': return 'info';
+      case 'В разработке': return 'success';
+      case 'Тестирование': return 'warning';
+      case 'Завершен': return 'secondary';
+      case 'Приостановлен': return 'error';
+      default: return 'default';
+    }
   };
 
   const getPriorityColor = (priority: string) => {

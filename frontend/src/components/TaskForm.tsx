@@ -68,7 +68,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 }) => {
   const isEdit = !!task;
   const { projects, loading: projectsLoading } = useProjects();
-  const { functionalBlocks, loading: functionalBlocksLoading } = useFunctionalBlocks();
+  // const { functionalBlocks, loading: functionalBlocksLoading } = useFunctionalBlocks();
 
   const {
     control,
@@ -83,10 +83,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       priority: 'Средний' as TaskPriority,
       type: 'Новый функционал' as TaskType,
       projectId: '',
-      functionalBlockId: '',
       assignedTo: '',
-      estimatedHours: undefined,
-      dueDate: '',
     },
   });
 
@@ -100,10 +97,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         priority: task.priority,
         type: task.type,
         projectId: task.projectId,
-        functionalBlockId: task.functionalBlockId,
         assignedTo: task.assignedTo || '',
-        estimatedHours: task.estimatedHours,
-        dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
       });
     } else {
       reset({
@@ -113,10 +107,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         priority: 'Средний' as TaskPriority,
         type: 'Новый функционал' as TaskType,
         projectId: '',
-        functionalBlockId: '',
         assignedTo: '',
-        estimatedHours: undefined,
-        dueDate: '',
       });
     }
   }, [task, reset]);
@@ -126,7 +117,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
       // Преобразуем данные для отправки
       const submitData = {
         ...data,
-        dueDate: data.dueDate ? `${data.dueDate}T00:00:00Z` : undefined,
       };
       await onSubmit(submitData);
       handleClose();
@@ -218,9 +208,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
                 render={({ field }) => (
                   <Autocomplete
                     {...field}
-                    options={projects}
+                    options={projects || []}
                     getOptionLabel={(option) => option.name}
-                    value={projects.find(p => p.id === field.value) || null}
+                    value={(projects || []).find(p => p.id === field.value) || null}
                     onChange={(_, value) => field.onChange(value?.id || '')}
                     loading={projectsLoading}
                     disabled={isSubmitting || loading || projectsLoading}
@@ -231,32 +221,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         label="Проект"
                         error={!!errors.projectId}
                         helperText={errors.projectId?.message}
-                      />
-                    )}
-                  />
-                )}
-              />
-
-              <Controller
-                name="functionalBlockId"
-                control={control}
-                rules={{ required: 'Функциональный блок обязателен' }}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    options={functionalBlocks}
-                    getOptionLabel={(option) => `${option.name} (${option.prefix})`}
-                    value={functionalBlocks.find(fb => fb.id === field.value) || null}
-                    onChange={(_, value) => field.onChange(value?.id || '')}
-                    loading={functionalBlocksLoading}
-                    disabled={isSubmitting || loading || functionalBlocksLoading}
-                    sx={{ flex: 1 }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Функциональный блок"
-                        error={!!errors.functionalBlockId}
-                        helperText={errors.functionalBlockId?.message}
                       />
                     )}
                   />
@@ -361,40 +325,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     error={!!errors.assignedTo}
                     helperText={errors.assignedTo?.message}
                     disabled={isSubmitting || loading}
-                  />
-                )}
-              />
-
-              <Controller
-                name="estimatedHours"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Оценка (часы)"
-                    type="number"
-                    sx={{ flex: 1 }}
-                    error={!!errors.estimatedHours}
-                    helperText={errors.estimatedHours?.message}
-                    disabled={isSubmitting || loading}
-                    inputProps={{ min: 0, max: 1000, step: 0.5 }}
-                  />
-                )}
-              />
-
-              <Controller
-                name="dueDate"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Срок выполнения"
-                    type="date"
-                    sx={{ flex: 1 }}
-                    error={!!errors.dueDate}
-                    helperText={errors.dueDate?.message}
-                    disabled={isSubmitting || loading}
-                    InputLabelProps={{ shrink: true }}
                   />
                 )}
               />

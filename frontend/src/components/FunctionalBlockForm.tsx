@@ -19,7 +19,7 @@ import {
 } from '../types/api';
 
 // Схема валидации
-const schema = yup.object({
+const schema = yup.object().shape({
   name: yup
     .string()
     .required('Название обязательно')
@@ -33,10 +33,9 @@ const schema = yup.object({
     .matches(/^[A-Z]+$/, 'Префикс должен содержать только заглавные латинские буквы'),
   description: yup
     .string()
-    .required('Описание обязательно')
-    .min(10, 'Описание должно содержать минимум 10 символов')
-    .max(500, 'Описание не должно превышать 500 символов'),
-});
+    .max(500, 'Описание не должно превышать 500 символов')
+    .notRequired(),
+}) as yup.ObjectSchema<CreateFunctionalBlockRequest>;
 
 interface FunctionalBlockFormProps {
   open: boolean;

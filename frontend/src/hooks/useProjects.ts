@@ -26,11 +26,13 @@ export const useProjects = (): UseProjectsReturn => {
     try {
       setLoading(true);
       setError(null);
-      const data = await projectService.getAll();
-      setProjects(data);
+              const data = await projectService.getAll();
+        const projectsArray = Array.isArray(data) ? data : [];
+        setProjects(projectsArray);
     } catch (err: any) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Ошибка загрузки проектов');
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -40,7 +42,7 @@ export const useProjects = (): UseProjectsReturn => {
     try {
       setError(null);
       const newProject = await projectService.create(data);
-      setProjects(prev => [...prev, newProject]);
+      setProjects(prev => [...(prev || []), newProject]);
       return newProject;
     } catch (err: any) {
       const apiError = err as ApiError;

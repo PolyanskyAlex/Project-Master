@@ -20,7 +20,7 @@ alwaysApply: false
     "цикличность": "Проверять, была ли эта ошибка недавно, не ли зацикленности в последних итерациях исправления ошибки."
   },
 
-  "codeStandards": "Использовать .cursor\Rules\develop_ai_agent_rules.txt",
+  "codeStandards": "Использовать .cursor\Rules\developRules.mdc",
 
   "testing": {
     "unitTests": {

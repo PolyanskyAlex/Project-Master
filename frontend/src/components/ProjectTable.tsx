@@ -7,7 +7,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
   Chip,
   Typography,
   Box,
@@ -16,13 +15,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Tooltip,
 } from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as ViewIcon,
-} from '@mui/icons-material';
 import { Project, ProjectStatus } from '../types/api';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -44,10 +37,10 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
-  const handleDeleteClick = (project: Project) => {
-    setSelectedProject(project);
-    setDeleteDialogOpen(true);
-  };
+  // const handleDeleteClick = (project: Project) => {
+  //   setSelectedProject(project);
+  //   setDeleteDialogOpen(true);
+  // };
 
   const handleDeleteConfirm = () => {
     if (selectedProject) {
@@ -62,10 +55,10 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
     setSelectedProject(null);
   };
 
-  const handleViewClick = (project: Project) => {
-    setSelectedProject(project);
-    setViewDialogOpen(true);
-  };
+  // const handleViewClick = (project: Project) => {
+  //   setSelectedProject(project);
+  //   setViewDialogOpen(true);
+  // };
 
   const handleViewClose = () => {
     setViewDialogOpen(false);
@@ -91,7 +84,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
     }
   };
 
-  if (projects.length === 0 && !loading) {
+  if (!projects || (projects.length === 0 && !loading)) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary">
@@ -113,10 +106,8 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
               <TableCell>Название</TableCell>
               <TableCell>Описание</TableCell>
               <TableCell>Статус</TableCell>
-              <TableCell>Функциональный блок</TableCell>
               <TableCell>Создан</TableCell>
               <TableCell>Обновлен</TableCell>
-              <TableCell align="center">Действия</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -150,11 +141,6 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" color="text.secondary">
-                    {project.functionalBlockId}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" color="text.secondary">
                     {formatDate(project.createdAt)}
                   </Typography>
                 </TableCell>
@@ -162,38 +148,6 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                   <Typography variant="body2" color="text.secondary">
                     {formatDate(project.updatedAt)}
                   </Typography>
-                </TableCell>
-                <TableCell align="center">
-                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                    <Tooltip title="Просмотр">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleViewClick(project)}
-                        disabled={loading}
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Редактировать">
-                      <IconButton
-                        size="small"
-                        onClick={() => onEdit(project)}
-                        disabled={loading}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Удалить">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteClick(project)}
-                        disabled={loading}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
                 </TableCell>
               </TableRow>
             ))}
@@ -248,14 +202,6 @@ const ProjectTable: React.FC<ProjectTableProps> = ({
                   color={getStatusColor(selectedProject.status)}
                   variant="outlined"
                 />
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Функциональный блок
-                </Typography>
-                <Typography variant="body2">
-                  {selectedProject.functionalBlockId}
-                </Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">

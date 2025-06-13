@@ -81,7 +81,7 @@ const Documents: React.FC = () => {
     setError(null);
   };
 
-  const handleFilterChange = async () => {
+  const handleFilterChange = React.useCallback(async () => {
     if (filterProject && filterType) {
       // Фильтр по проекту и типу не поддерживается напрямую в API
       // Загружаем все документы и фильтруем на клиенте
@@ -93,11 +93,11 @@ const Documents: React.FC = () => {
     } else {
       await fetchDocuments();
     }
-  };
+  }, [filterProject, filterType, fetchDocuments, fetchDocumentsByProject, fetchDocumentsByType]);
 
   React.useEffect(() => {
     handleFilterChange();
-  }, [filterProject, filterType]);
+  }, [handleFilterChange]);
 
   const filteredDocuments = React.useMemo(() => {
     let filtered = documents;
@@ -111,10 +111,10 @@ const Documents: React.FC = () => {
     return filtered;
   }, [documents, filterProject, filterType]);
 
-  const getProjectName = (projectId: string): string => {
-    const project = projects.find(p => p.id === projectId);
-    return project?.name || 'Неизвестный проект';
-  };
+  // const getProjectName = (projectId: string): string => {
+  //   const project = projects.find(p => p.id === projectId);
+  //   return project?.name || 'Неизвестный проект';
+  // };
 
   const getDocumentStats = () => {
     const stats = {
