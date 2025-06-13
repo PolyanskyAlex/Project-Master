@@ -8,11 +8,10 @@ import {
 } from '../types/api';
 
 export class DocumentService extends ApiService {
-  private basePath = '/documents';
+  private basePath = '/api/v1/documents';
 
   async getAllDocuments(): Promise<Document[]> {
-    const response = await this.get<ListResponse<Document>>(this.basePath);
-    return response.items;
+    return await this.get<Document[]>(this.basePath);
   }
 
   async getDocument(id: string): Promise<Document> {
@@ -32,28 +31,24 @@ export class DocumentService extends ApiService {
   }
 
   async getDocumentsByProject(projectId: string): Promise<Document[]> {
-    const response = await this.get<ListResponse<Document>>(`${this.basePath}/project/${projectId}`);
-    return response.items;
+    return await this.get<Document[]>(`${this.basePath}/project/${projectId}`);
   }
 
   async getDocumentsByType(type: DocumentType): Promise<Document[]> {
-    const response = await this.get<ListResponse<Document>>(`${this.basePath}/by-type?type=${type}`);
-    return response.items;
+    return await this.get<Document[]>(`${this.basePath}/by-type?type=${type}`);
   }
 
   async getDocumentsByProjectAndType(projectId: string, type: DocumentType): Promise<Document[]> {
-    const response = await this.get<ListResponse<Document>>(`${this.basePath}/project/${projectId}/type/${type}`);
-    return response.items;
+    return await this.get<Document[]>(`${this.basePath}/project/${projectId}/type/${type}`);
   }
 
   async getAgentEditableDocumentsByProject(projectId: string): Promise<Document[]> {
-    const response = await this.get<ListResponse<Document>>(`${this.basePath}/project/${projectId}/agent-editable`);
-    return response.items;
+    return await this.get<Document[]>(`${this.basePath}/project/${projectId}/agent-editable`);
   }
 
   async getValidDocumentTypes(): Promise<DocumentType[]> {
-    const response = await this.get<{ types: DocumentType[] }>(`${this.basePath}/document-types`);
-    return response.types;
+    const response = await this.get<{ documentTypes: DocumentType[] }>(`${this.basePath}/document-types`);
+    return response.documentTypes;
   }
 }
 

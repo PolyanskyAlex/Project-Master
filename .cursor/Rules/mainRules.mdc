@@ -4,7 +4,7 @@ globs:
 alwaysApply: true
 ---
 ---
-description: 
+description: main rules, follow always
 globs: 
 alwaysApply: true
 ---

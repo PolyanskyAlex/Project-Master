@@ -191,21 +191,26 @@ export const DocumentForm: React.FC<DocumentFormProps> = ({
                   <Select
                     {...field}
                     label="Тип документа"
-                    disabled={loading || documentTypes.length === 0}
-                    value={documentTypes.length === 0 ? '' : field.value}
-                    onChange={e => {
-                      if (documentTypes.length === 0) {
-                        field.onChange('');
-                      } else {
-                        field.onChange(e.target.value);
-                      }
-                    }}
+                    disabled={loading}
                   >
-                    {documentTypes.map((type) => (
-                      <MenuItem key={type} value={type}>
-                        {getDocumentTypeLabel(type)}
-                      </MenuItem>
-                    ))}
+                    {/* Фиксированные типы документов, если API не отвечает */}
+                    {documentTypes.length > 0 ? (
+                      documentTypes.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {getDocumentTypeLabel(type)}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      [
+                        <MenuItem key="BRD" value="BRD">Бизнес-требования (BRD)</MenuItem>,
+                        <MenuItem key="SAD" value="SAD">Системная архитектура (SAD)</MenuItem>,
+                        <MenuItem key="AI-Ready" value="AI-Ready">AI-Ready документ</MenuItem>,
+                        <MenuItem key="AI Executable" value="AI Executable">AI Executable план</MenuItem>,
+                        <MenuItem key="Technical" value="Technical">Техническая документация</MenuItem>,
+                        <MenuItem key="User Guide" value="User Guide">Руководство пользователя</MenuItem>,
+                        <MenuItem key="API Documentation" value="API Documentation">API документация</MenuItem>
+                      ]
+                    )}
                   </Select>
                   {errors.type && (
                     <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5 }}>

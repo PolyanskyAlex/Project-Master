@@ -8,7 +8,7 @@ import {
 } from '../types/api';
 
 export class ProjectPlanService extends ApiService {
-  private basePath = '/projects';
+  private basePath = '/api/v1/projects';
 
   async getProjectPlan(projectId: string): Promise<ProjectPlan> {
     return await this.get<ProjectPlan>(`${this.basePath}/${projectId}/plan`);
