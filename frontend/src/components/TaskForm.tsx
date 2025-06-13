@@ -24,7 +24,7 @@ import {
   TaskType,
 } from '../types/api';
 import { useProjects } from '../hooks/useProjects';
-import { useFunctionalBlocks } from '../hooks/useFunctionalBlocks';
+// import { useFunctionalBlocks } from '../hooks/useFunctionalBlocks';
 
 const TASK_STATUSES: { value: TaskStatus; label: string }[] = [
   { value: 'Новая', label: 'Новая' },

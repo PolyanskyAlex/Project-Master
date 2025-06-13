@@ -63,6 +63,9 @@ export interface Task {
   projectId: string;
   parentTaskId?: string;
   assignedTo?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+  dueDate?: string;
   createdAt: string;
   updatedAt: string;
 }
