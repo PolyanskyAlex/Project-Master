@@ -14,6 +14,7 @@ import { SetupCommands } from './commands/setup';
 export function activate(context: vscode.ExtensionContext) {
     const logger = new Logger();
     logger.info('Project Master extension is being activated...');
+    console.log('=== Project Master: activate() called ===');
 
     try {
         // Initialize services
@@ -90,6 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
             tasksProvider,
             planProvider
         });
+        console.log('=== Project Master: registerCommands() called ===');
 
         // Register setup commands
         const setupCommands = new SetupCommands(configService, effectiveApiService as any, logger);
@@ -198,6 +200,7 @@ export function activate(context: vscode.ExtensionContext) {
             cacheEnabled,
             apiService: cachedApiService ? 'CachedApiService' : 'ApiService'
         });
+        console.log('=== Project Master: activate() finished ===');
 
     } catch (error) {
         logger.error('Failed to activate Project Master extension', error);

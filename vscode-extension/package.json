@@ -5,7 +5,7 @@
   "version": "0.4.0",
   "publisher": "project-master",
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.96.0"
   },
   "categories": [
     "Other",
@@ -19,7 +19,7 @@
     "development"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "*"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -707,7 +707,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "16.x",
     "@types/sinon": "^17.0.4",
-    "@types/vscode": "^1.100.0",
+    "@types/vscode": "1.96.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-electron": "^2.2.0",

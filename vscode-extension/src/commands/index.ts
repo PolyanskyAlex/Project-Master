@@ -26,6 +26,7 @@ interface CommandDependencies {
 }
 
 export function registerCommands(context: vscode.ExtensionContext, deps: CommandDependencies): void {
+    console.log('=== Project Master: registerCommands() START ===');
     const { apiService, cachedApiService, configService, logger, projectsProvider, tasksProvider, planProvider } = deps;
 
     // Use cached API service if available
@@ -53,6 +54,7 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
 
     // Core navigation and selection commands
     const selectProjectCommand = vscode.commands.registerCommand('projectMaster.selectProject', async (project: Project) => {
+        console.log('=== Project Master: selectProjectCommand registered ===');
         try {
             logger.info(`Selecting project: ${project.name}`);
             
@@ -89,6 +91,7 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
 
     // Refresh commands with enhanced feedback
     const refreshProjectsCommand = vscode.commands.registerCommand('projectMaster.refreshProjects', async () => {
+        console.log('=== Project Master: refreshProjectsCommand registered ===');
         try {
             logger.info('Refreshing projects...');
             
@@ -150,6 +153,7 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
 
     // Enhanced sync plan command
     const syncPlanCommand = vscode.commands.registerCommand('projectMaster.syncPlan', async () => {
+        console.log('=== Project Master: syncPlanCommand registered ===');
         try {
             const selectedProject = projectsProvider.getSelectedProject();
             
@@ -437,4 +441,5 @@ ${selectedProject ? `
     );
 
     logger.info('All commands registered successfully');
+    console.log('=== Project Master: registerCommands() END ===');
 } 
