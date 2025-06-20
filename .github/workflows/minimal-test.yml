@@ -1,0 +1,9 @@
+name: Minimal Test
+
+on: [push, workflow_dispatch]
+
+jobs:
+  minimal:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Minimal test works!" 
