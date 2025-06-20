@@ -2,7 +2,6 @@ name: Test Simple
 
 on:
   push:
-    branches: [ master ]
   workflow_dispatch:
 
 jobs:
@@ -15,6 +14,8 @@ jobs:
       - name: Simple test
         run: |
           echo "Hello from GitHub Actions!"
+          echo "Current branch: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
           echo "Current directory: $(pwd)"
           echo "Files in repo:"
           ls -la
@@ -22,4 +23,6 @@ jobs:
       - name: Test summary
         run: |
           echo "## Simple Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ GitHub Actions is working!" >> $GITHUB_STEP_SUMMARY 
+          echo "✅ GitHub Actions is working!" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "Event: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY 
