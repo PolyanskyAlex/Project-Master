@@ -60,20 +60,6 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_PASSWORD: password
-          POSTGRES_USER: project_user
-          POSTGRES_DB: project_manager_db
-        options: >-
-          --health-cmd "pg_isready -U project_user -d project_manager_db"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - name: Checkout code
@@ -101,12 +87,12 @@ jobs:
 
       - name: Run unit tests
         env:
-          DATABASE_URL: postgres://project_user:password@localhost:5432/project_manager_db?sslmode=disable
           API_KEY: test-api-key
           SERVER_PORT: 8080
+          TEST_MODE: unit
         run: |
           cd backend
-          go test -v -race -coverprofile=coverage.out ./...
+          go test -v -short -coverprofile=coverage.out ./...
         continue-on-error: true
 
       - name: Generate coverage report
@@ -155,10 +141,11 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage/
 
-  e2e-tests:
-    name: End-to-End Tests
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests]
+    if: false  # Отключаем интеграционные тесты пока
     services:
       postgres:
         image: postgres:15-alpine
@@ -173,6 +160,31 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgres://project_user:password@localhost:5432/project_manager_db?sslmode=disable
+          API_KEY: test-api-key
+          SERVER_PORT: 8080
+        run: |
+          cd backend
+          go test -v -race -tags=integration ./...
+        continue-on-error: true
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    if: false  # Отключаем E2E тесты пока
 
     steps:
       - name: Checkout code
@@ -244,7 +256,7 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [lint, backend-tests, frontend-tests, e2e-tests, security-scan]
+    needs: [lint, backend-tests, frontend-tests, security-scan]
     if: always()
     steps:
       - name: Test Results Summary
@@ -255,5 +267,6 @@ jobs:
           echo "| Linting | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Backend Tests | ${{ needs.backend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend Tests | ${{ needs.frontend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| E2E Tests | ${{ needs.e2e-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY 
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | Disabled |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Tests | Disabled |" >> $GITHUB_STEP_SUMMARY 

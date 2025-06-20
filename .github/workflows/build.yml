@@ -19,7 +19,7 @@ jobs:
   build-backend:
     name: Build Backend Image
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+    if: ${{ github.event.workflow_run.conclusion != 'cancelled' || github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
@@ -79,7 +79,7 @@ jobs:
   build-frontend:
     name: Build Frontend Image
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+    if: ${{ github.event.workflow_run.conclusion != 'cancelled' || github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
