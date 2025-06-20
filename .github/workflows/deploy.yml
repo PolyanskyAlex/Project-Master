@@ -156,7 +156,7 @@ jobs:
             cd /opt/project-manager
             
             # Download docker-compose file
-            curl -o docker-compose.prod.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.prod.yml
+            curl -o docker-compose.prod.yml https://raw.githubusercontent.com/${{ github.repository }}/master/docker-compose.prod.yml
             
             # Set environment variables
             export BACKEND_IMAGE="${{ github.event.inputs.backend_image }}"
@@ -270,7 +270,7 @@ jobs:
             cd /opt/project-manager
             
             # Download latest docker-compose file
-            curl -o docker-compose.prod.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.prod.yml
+            curl -o docker-compose.prod.yml https://raw.githubusercontent.com/${{ github.repository }}/master/docker-compose.prod.yml
             
             # Set environment variables
             export BACKEND_IMAGE="${{ github.event.inputs.backend_image }}"

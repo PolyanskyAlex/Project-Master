@@ -194,7 +194,7 @@ jobs:
     name: Trigger Deployment
     runs-on: ubuntu-latest
     needs: [build-backend, build-frontend]
-    if: success() && github.ref == 'refs/heads/main'
+    if: success() && github.ref == 'refs/heads/master'
     steps:
       - name: Trigger deployment workflow
         uses: actions/github-script@v7
