@@ -36,13 +36,13 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "test:coverage": "react-scripts test --coverage --watchAll=false",
-    "test:ci": "react-scripts test --coverage --watchAll=false --ci",
-    "test:unit": "react-scripts test --testPathPattern=__tests__/(components|hooks|services|utils)",
-    "test:integration": "react-scripts test --testPathPattern=__tests__/integration",
-    "test:e2e": "react-scripts test --testPathPattern=__tests__/e2e",
+    "test:unit": "react-scripts test --coverage --watchAll=false --testPathPattern=__tests__/(components|hooks|services|utils)",
+    "test:integration": "react-scripts test --coverage --watchAll=false --testPathPattern=__tests__/integration",
+    "test:e2e": "react-scripts test --coverage --watchAll=false --testPathPattern=__tests__/e2e",
+    "test:ci": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
