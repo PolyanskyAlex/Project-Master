@@ -3,6 +3,11 @@ description:
 globs: 
 alwaysApply: true
 ---
+---
+description: 
+globs: 
+alwaysApply: true
+---
 {
   "context": "main_router",
   "description": "Главный файл-маршрутизатор. Определяет, какой набор правил использовать для конкретного типа работы. Также задает базовое поведение AI-агента.",
@@ -28,8 +33,8 @@ alwaysApply: true
 
   "deploymentRules": {
     "trigger_phrases": ["задеплой", "выполни задачу деплоя", "разверни приложение"],
-    "rule_file": ".cursor/rules/deploy.mdc",
-    "description": "Правила для выполнения задач деплоя."
+    "rule_file": ".cursor/pipelines/deploy_pipeline.mdc",
+    "description": "Запускает полный пайплайн для выполнения задач деплоя, включая CI/CD, валидацию и откат."
   },
 
   "testingRules": {
