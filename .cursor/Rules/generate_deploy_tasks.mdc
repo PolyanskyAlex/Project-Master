@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+{
+  "context": "deploy_task_generation",
+  "description": "Правила для генерации детализированных ЗАДАЧ ДЕПЛОЯ. Использует базовый шаблон _task_template.mdc и добавляет специфичные для деплоя поля.",
+  "inherits": ".cursor/rules/_task_template.mdc",
+
+  "taskDecomposition": {
+    "principle": "Декомпозируй DeployPlan на атомарные задачи инфраструктуры и развертывания.",
+    "location": "tasks/deploy/",
+    "numberingPrefix": "2."
+  },
+
+  "deploySpecificFields": {
+    "description": "Поля, обязательные только для задач деплоя.",
+    "deploy_requirements": "Укажи конкретные требования к инфраструктуре и развертыванию из DeployPlan. Никаких ссылок, только полный текст.",
+    "dockerization_tasks": {
+      "requirement": "Если задача связана с Docker, подробно описать требования к Dockerfile или CI/CD пайплайну.",
+      "examples": [
+        "Создать Dockerfile для backend-сервиса с использованием multi-stage build.",
+        "Настроить GitHub Actions workflow для сборки и публикации образа в GHCR при push в main.",
+        "Создать задачу на настройку сервиса на платформе для запуска образа `ghcr.io/my-org/my-app:latest`."
+      ]
+    },
+    "rollback_strategy": "Конкретный план отката для данной задачи (например, 'Развернуть предыдущий тег Docker-образа').",
+    "monitoring_setup": "Какие метрики и алерты настраиваются для контейнеризированного приложения."
+  }
+}

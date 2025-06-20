@@ -27,6 +27,7 @@ import {
   Settings,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import ServerStatus from './ServerStatus';
 
 const drawerWidth = 240;
 
@@ -173,6 +174,7 @@ const Navigation: React.FC<NavigationProps> = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {navigationItems.find(item => item.path === location.pathname)?.text || 'Система Управления Проектами'}
           </Typography>
+          <ServerStatus />
           <IconButton color="inherit">
             <Settings />
           </IconButton>

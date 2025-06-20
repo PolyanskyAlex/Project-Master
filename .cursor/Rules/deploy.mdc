@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+{
+  "context": "docker_deploy_execution",
+  "description": "Правила безопасного, воспроизводимого и автоматизированного деплоя на базе контейнеров и принципов GitOps/DevSecOps.",
+  "inherits": ".cursor/rules/_common_principles.mdc",
+
+  "coreConcept": {
+    "artifact": "Единственным артефактом для деплоя является неизменяемый, версионированный Docker-образ, хранящийся в приватном Container Registry.",
+    "process": "CI (Code Integration) -> CD (Continuous Delivery/Deployment). CI отвечает за сборку и тестирование, CD — за развертывание."
+  },
+
+  "dockerfileBestPractices": {
+    "multiStageBuilds": "Обязательно использовать multi-stage builds для разделения сборочного окружения и production-окружения. Это минимизирует размер и поверхность атаки финального образа.",
+    "nonRootUser": "Контейнер должен запускаться от имени непривилегированного пользователя, созданного внутри Dockerfile (`USER appuser`).",
+    "caching": "Оптимизировать порядок инструкций для максимального использования кеша слоев Docker (сначала `COPY package.json`, потом `npm install`, потом `COPY . .`).",
+    "baseImage": "Использовать только официальные, минималистичные и проверенные базовые образы, предпочтительно `distroless` или `alpine`."
+  },
+
+  "cicdPipeline": {
+    "trigger": "Пайплайн должен иметь разные сценарии для разных триггеров: `pull_request` (тесты, линтеры), `push` в `main` (сборка, пуш образа), создание `release` тега (деплой на production).",
+    "securityInPipeline": [
+      "SAST (Static Application Security Testing): Анализ исходного кода на уязвимости (например, SonarQube, CodeQL).",
+      "SCA (Software Composition Analysis): Сканирование зависимостей на известные уязвимости (Snyk, Dependabot).",
+      "Container Scanning: Сканирование Docker-образа на уязвимости после сборки (Trivy, Grype)."
+    ],
+    "deploymentTools": "Деплой должен осуществляться через системы управления конфигурацией или декларативные инструменты (Helm, Kustomize, Ansible, Terraform)."
+  },
+
+  "environmentConfiguration": {
+    "iac": "Инфраструктура (сети, базы данных, сервисы) должна описываться в коде (Infrastructure as Code) с помощью Terraform или аналогов.",
+    "separation": "Полная изоляция окружений `dev`, `staging` и `production` (разные сети, базы данных, учетные записи).",
+    "secrets": "Секреты должны централизованно управляться через Vault, AWS Secrets Manager, GCP Secret Manager и безопасно внедряться в среду выполнения во время запуска, а не сборки."
+  },
+
+  "monitoringAndLogging": {
+    "logging": "Все приложения должны писать структурированные логи (JSON) в `stdout`/`stderr`. Каждый лог должен содержать `correlation_id` для трассировки запросов через несколько сервисов.",
+    "healthChecks": "Реализовать два типа health-check эндпоинтов: `livenessProbe` (сервис жив?) и `readinessProbe` (сервис готов принимать трафик?).",
+    "metrics": "Приложения должны экспортировать метрики в формате Prometheus (время ответа, частота ошибок, сатурация ресурсов) для сбора системой мониторинга."
+  },
+
+  "rollbackStrategy": {
+    "primary": "Основная стратегия — автоматический откат на предыдущий стабильный тег Docker-образа в случае провала health-check'ов после деплоя.",
+    "database": "Миграции базы данных должны быть обратно совместимыми или иметь явные скрипты отката."
+  }
+}

@@ -1,64 +1,110 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { ApiError } from '../types/api';
 import { logger } from '../utils/logger';
+import { discoverBackendServer } from '../utils/serverDiscovery';
 
 // Конфигурация API
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-const API_KEY = process.env.REACT_APP_API_KEY || 'your-api-key-here';
+let API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_KEY = process.env.REACT_APP_API_KEY || 'dev-api-key-123';
 
-// Создание экземпляра axios
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Key': API_KEY,
-  },
-});
+// Создание экземпляра axios с базовой инициализацией
+let apiClient: AxiosInstance = createApiClient(API_BASE_URL);
 
-// Интерцептор для обработки ответов
-apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    const method = response.config.method?.toUpperCase() || 'UNKNOWN';
-    const url = response.config.url || 'unknown';
+// Создание API клиента
+function createApiClient(baseURL: string): AxiosInstance {
+  const client = axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': API_KEY,
+    },
+  });
+
+  // Интерцептор для обработки ответов
+  client.interceptors.response.use(
+    (response: AxiosResponse) => {
+      const method = response.config.method?.toUpperCase() || 'UNKNOWN';
+      const url = response.config.url || 'unknown';
+      
+      logger.logApiResponse(method, url, response.status, response.data);
+      return response;
+    },
+    (error) => {
+      const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
+      const url = error.config?.url || 'unknown';
+      
+      // Обработка ошибок API
+      const apiError: ApiError = {
+        error: error.response?.status ? `HTTP ${error.response.status}` : 'Network Error',
+        message: error.response?.data?.message || error.message,
+        details: error.response?.data,
+      };
+
+      logger.logApiError(method, url, apiError);
+      return Promise.reject(apiError);
+    }
+  );
+
+  // Интерцептор для обработки запросов
+  client.interceptors.request.use(
+    (config) => {
+      const method = config.method?.toUpperCase() || 'UNKNOWN';
+      const url = config.url || 'unknown';
+      
+      logger.logApiRequest(method, url, config.data);
+      return config;
+    },
+    (error) => {
+      logger.error('Request Error', error, 'API');
+      return Promise.reject(error);
+    }
+  );
+
+  return client;
+}
+
+// Автоматическое обнаружение и инициализация API
+const initializeAPI = async () => {
+  try {
+    const serverInfo = await discoverBackendServer();
     
-    logger.logApiResponse(method, url, response.status, response.data);
-    return response;
-  },
-  (error) => {
-    const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
-    const url = error.config?.url || 'unknown';
+    if (serverInfo.baseURL !== API_BASE_URL) {
+      API_BASE_URL = serverInfo.baseURL;
+      console.log(`🔍 Backend обнаружен: ${API_BASE_URL} (метод: ${serverInfo.method})`);
+      
+      if (!serverInfo.discovered) {
+        console.warn('⚠️ Backend сервер не найден, используется URL по умолчанию');
+      }
+      
+      // Пересоздаем клиент с новым URL
+      apiClient = createApiClient(API_BASE_URL);
+    }
     
-    // Обработка ошибок API
-    const apiError: ApiError = {
-      error: error.response?.status ? `HTTP ${error.response.status}` : 'Network Error',
-      message: error.response?.data?.message || error.message,
-      details: error.response?.data,
+    return serverInfo;
+  } catch (error) {
+    console.error('Ошибка инициализации API:', error);
+    // Fallback к значению по умолчанию
+    if (!apiClient) {
+      apiClient = createApiClient(API_BASE_URL);
+    }
+    return {
+      baseURL: API_BASE_URL,
+      port: 8080,
+      discovered: false,
+      method: 'default' as const
     };
-
-    logger.logApiError(method, url, apiError);
-    return Promise.reject(apiError);
   }
-);
+};
 
-// Интерцептор для обработки запросов
-apiClient.interceptors.request.use(
-  (config) => {
-    const method = config.method?.toUpperCase() || 'UNKNOWN';
-    const url = config.url || 'unknown';
-    
-    logger.logApiRequest(method, url, config.data);
-    return config;
-  },
-  (error) => {
-    logger.error('Request Error', error, 'API');
-    return Promise.reject(error);
-  }
-);
+// Инициализируем API при загрузке модуля
+initializeAPI();
 
 // Базовые методы API
 export class ApiService {
-  protected client = apiClient;
+  protected get client() {
+    return apiClient;
+  }
 
   // GET запрос
   protected async get<T>(url: string, params?: any): Promise<T> {
@@ -93,6 +139,21 @@ export const checkApiHealth = async (): Promise<boolean> => {
   } catch (error) {
     console.error('API Health Check Failed:', error);
     return false;
+  }
+};
+
+// Получение текущего базового URL
+export const getCurrentApiBaseURL = (): string => {
+  return API_BASE_URL;
+};
+
+// Переинициализация API с новым URL
+export const reinitializeAPI = async (baseURL?: string): Promise<void> => {
+  if (baseURL) {
+    API_BASE_URL = baseURL;
+    apiClient = createApiClient(API_BASE_URL);
+  } else {
+    await initializeAPI();
   }
 };
 

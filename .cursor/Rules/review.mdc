@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 {
   "$schema": "https://app.cursor.so/schemas/v1/rules.schema.json",
   "rules": [
@@ -7,6 +12,20 @@
       "importance": "critical",
       "pattern": ".*",
       "category": "Correctness"
+    },
+    {
+      "name": "pipeline",
+      "description": "Проверь что pipeline из .cursor\rules\dev.mdc выполнен полностью, неукаснительно и дословно",
+      "importance": "critical",
+      "pattern": ".*",
+      "category": "pipeline"
+    },
+    {
+      "name": "context7",
+      "description": "Проверь код и архитектуру на соответствие context7",
+      "importance": "critical",
+      "pattern": ".*",
+      "category": "codearch"
     },
     {
       "name": "Avoid overengineering",
@@ -70,6 +89,43 @@
       "importance": "medium",
       "pattern": ".*",
       "category": "Transparency"
+    },
+    {
+      "name": "Technical documentation completeness",
+              "description": "Проверь, что создана/обновлена техническая документация согласно .cursor/rules/tech_docs.mdc. API документация, архитектурные схемы, инструкции по настройке должны быть актуальными.",
+      "importance": "high",
+      "pattern": ".*",
+      "category": "Documentation"
+    },
+    {
+      "name": "User documentation quality",
+      "description": "Убедись, что пользовательская документация понятна целевой аудитории. Инструкции должны быть пошаговыми, с примерами использования.",
+      "importance": "medium",
+      "pattern": ".*",
+      "category": "Documentation"
+    },
+    {
+      "name": "ASCII diagrams correctness",
+      "description": "Проверь, что ASCII диаграммы корректно отображают архитектуру, процессы или структуры данных. Диаграммы должны быть понятными и точными.",
+      "importance": "medium",
+      "pattern": ".*",
+      "category": "Documentation"
+    },
+    {
+      "name": "Deployment documentation accuracy",
+      "description": "Для задач деплоя проверь, что документация содержит актуальные инструкции по развертыванию, rollback процедуры, troubleshooting guide и runbook.",
+      "importance": "high",
+      "pattern": ".*",
+      "category": "Documentation"
+    },
+    {
+      "name": "Documentation maintenance",
+      "description": "Убедись, что существующая документация обновлена в соответствии с изменениями в коде или процессах. Устаревшая информация должна быть исправлена.",
+      "importance": "medium",
+      "pattern": ".*",
+      "category": "Documentation"
     }
   ]
 }
+
+
