@@ -3,6 +3,11 @@ description:
 globs: 
 alwaysApply: false
 ---
+---
+description: 
+globs: 
+alwaysApply: false
+---
 {
   "context": "docker_deploy_execution",
   "description": "Правила безопасного, воспроизводимого и автоматизированного деплоя на базе контейнеров и принципов GitOps/DevSecOps.",
@@ -28,6 +33,30 @@ alwaysApply: false
       "Container Scanning: Сканирование Docker-образа на уязвимости после сборки (Trivy, Grype)."
     ],
     "deploymentTools": "Деплой должен осуществляться через системы управления конфигурацией или декларативные инструменты (Helm, Kustomize, Ansible, Terraform)."
+  },
+
+  "githubActionsInteraction": {
+    "title": "Правила взаимодействия с GitHub Actions",
+    "description": "Конкретные шаги для агента по работе с CI/CD пайплайнами в GitHub.",
+    "workflowDiscovery": {
+      "action": "Найди файлы воркфлоу в директории `.github/workflows/`. Основные файлы, на которые стоит обратить внимание: `ci.yml`, `deploy.yml`, `release.yml`."
+    },
+    "triggerAndMonitor": {
+      "action": "Запусти воркфлоу (через `git push` или `gh workflow run`). Отслеживай его выполнение с помощью команды `gh run watch <run_id>` до завершения.",
+      "requirement": "Не продолжай выполнение пайплайна, пока воркфлоу не завершится (успешно или с ошибкой)."
+    },
+    "logAnalysis": {
+      "action": "В случае сбоя воркфлоу, немедленно скачай полные логи (`gh run view <run_id> --log`).",
+      "searchKeywords": [
+        "Ищи в логах ключевые слова: `Error`, `failed`, `exit code`, `npm ERR!`, `pytest: ... failed`, `denied`, `unauthorized`.",
+        "Проанализируй контекст вокруг найденного ключевого слова, чтобы определить шаг, на котором произошел сбой (например, 'Run tests', 'Build Docker image', 'Deploy to Staging').",
+        "Определи точную причину: ошибка компиляции, провалившийся тест, неверный креды, проблема с зависимостью, ошибка в скрипте деплоя."
+      ]
+    },
+    "workflowModification": {
+      "action": "Если причина сбоя находится в самом `.yml` файле воркфлоу (например, неверная команда или путь), исправь его в рамках задачи по багфиксингу.",
+      "precaution": "Перед коммитом изменений в `.yml` файле, проверь его синтаксис локально."
+    }
   },
 
   "environmentConfiguration": {
