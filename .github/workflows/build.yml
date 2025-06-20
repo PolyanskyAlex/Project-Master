@@ -19,7 +19,7 @@ jobs:
   build-backend:
     name: Build Backend Image
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion != 'cancelled' || github.event_name == 'push' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
@@ -71,7 +71,7 @@ jobs:
           output-file: backend-sbom.spdx.json
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-sbom
           path: backend-sbom.spdx.json
@@ -79,7 +79,7 @@ jobs:
   build-frontend:
     name: Build Frontend Image
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion != 'cancelled' || github.event_name == 'push' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
@@ -131,7 +131,7 @@ jobs:
           output-file: frontend-sbom.spdx.json
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-sbom
           path: frontend-sbom.spdx.json
@@ -148,6 +148,7 @@ jobs:
     strategy:
       matrix:
         image: [backend, frontend]
+      fail-fast: false
 
     steps:
       - name: Run Trivy vulnerability scanner
@@ -158,7 +159,7 @@ jobs:
           output: 'trivy-${{ matrix.image }}-results.sarif'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-${{ matrix.image }}-results.sarif'
@@ -195,7 +196,7 @@ jobs:
     if: success() && github.ref == 'refs/heads/main'
     steps:
       - name: Trigger deployment workflow
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({

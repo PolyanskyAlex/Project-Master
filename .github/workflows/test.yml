@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           
-      # Backend linting
+      # Backend linting - CRITICAL: Must pass for build to continue
       - name: Install golangci-lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
@@ -39,9 +39,8 @@ jobs:
         run: |
           cd backend
           golangci-lint run --timeout=5m
-        continue-on-error: true
         
-      # Backend tests
+      # Backend tests - CRITICAL: Must pass
       - name: Run backend unit tests
         env:
           API_KEY: test-api-key
@@ -50,50 +49,43 @@ jobs:
         run: |
           cd backend
           go test -v -short -coverprofile=coverage.out ./...
-        continue-on-error: true
         
       - name: Upload backend coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-coverage
           path: backend/coverage.out
-        continue-on-error: true
         
-      # Frontend setup and tests
+      # Frontend setup and tests - CRITICAL: Must pass
       - name: Install frontend dependencies
         run: |
           cd frontend
           npm ci
-        continue-on-error: true
         
       - name: Run ESLint
         run: |
           cd frontend
           npm run lint
-        continue-on-error: true
 
       - name: Run TypeScript check
         run: |
           cd frontend
           npm run type-check
-        continue-on-error: true
         
       - name: Run frontend tests
         run: |
           cd frontend
           npm test -- --coverage --watchAll=false --passWithNoTests
-        continue-on-error: true
         
       - name: Upload frontend coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-coverage
           path: frontend/coverage/
-        continue-on-error: true
         
-      # Security scanning
+      # Security scanning - WARNING: Can fail but won't block build
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -103,7 +95,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -115,18 +107,28 @@ jobs:
           npm audit --audit-level=high
         continue-on-error: true
         
+      # VSCode Extension tests
+      - name: Test VSCode Extension
+        run: |
+          cd vscode-extension
+          npm ci
+          npm run compile
+          npm test
+        continue-on-error: true
+        
       # Summary
       - name: Test Results Summary
         if: always()
         run: |
           echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Go Linting | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend Tests | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend Linting | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend Tests | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Scan | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Critical |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Go Linting | ✅ Required | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend Tests | ✅ Required | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Linting | ✅ Required | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Tests | ✅ Required | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ⚠️ Optional | ❌ |" >> $GITHUB_STEP_SUMMARY
+          echo "| VSCode Extension | ⚠️ Optional | ❌ |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📝 Note: All steps use continue-on-error for stability" >> $GITHUB_STEP_SUMMARY
-          echo "🔍 Check individual step logs for detailed results" >> $GITHUB_STEP_SUMMARY 
+          echo "📝 **Fail-Fast Policy**: Critical tests must pass for build to continue" >> $GITHUB_STEP_SUMMARY
+          echo "🔍 **Security & Extensions**: Optional checks won't block the pipeline" >> $GITHUB_STEP_SUMMARY 

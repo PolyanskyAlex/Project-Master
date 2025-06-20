@@ -36,9 +36,25 @@ jobs:
     outputs:
       can_deploy: ${{ steps.checks.outputs.can_deploy }}
       deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+      staging_url: ${{ steps.env-config.outputs.staging_url }}
+      production_url: ${{ steps.env-config.outputs.production_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Configure environment URLs
+        id: env-config
+        run: |
+          # Configure URLs based on secrets or defaults
+          STAGING_URL="${{ secrets.STAGING_URL || 'http://localhost:3000' }}"
+          PRODUCTION_URL="${{ secrets.PRODUCTION_URL || 'http://localhost:3000' }}"
+          
+          echo "staging_url=$STAGING_URL" >> $GITHUB_OUTPUT
+          echo "production_url=$PRODUCTION_URL" >> $GITHUB_OUTPUT
+          
+          echo "✅ Environment URLs configured"
+          echo "Staging: $STAGING_URL"
+          echo "Production: $PRODUCTION_URL"
 
       - name: Validate inputs
         run: |
@@ -46,6 +62,25 @@ jobs:
           echo "Backend Image: ${{ github.event.inputs.backend_image }}"
           echo "Frontend Image: ${{ github.event.inputs.frontend_image }}"
           echo "Force Deploy: ${{ github.event.inputs.force_deploy }}"
+          
+          # Validate environment
+          if [[ "${{ github.event.inputs.environment }}" != "staging" && "${{ github.event.inputs.environment }}" != "production" ]]; then
+            echo "❌ Invalid environment: ${{ github.event.inputs.environment }}"
+            exit 1
+          fi
+          
+          # Validate image names
+          if [[ ! "${{ github.event.inputs.backend_image }}" =~ ^ghcr\.io/.+:.+ ]]; then
+            echo "❌ Invalid backend image format"
+            exit 1
+          fi
+          
+          if [[ ! "${{ github.event.inputs.frontend_image }}" =~ ^ghcr\.io/.+:.+ ]]; then
+            echo "❌ Invalid frontend image format"
+            exit 1
+          fi
+          
+          echo "✅ Input validation passed"
 
       - name: Check Docker images exist
         run: |
@@ -56,7 +91,7 @@ jobs:
 
       - name: Create deployment
         id: deployment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const deployment = await github.rest.repos.createDeployment({
@@ -73,7 +108,7 @@ jobs:
             return deployment.data.id;
 
       - name: Set deployment status to in_progress
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             await github.rest.repos.createDeploymentStatus({
@@ -97,19 +132,21 @@ jobs:
     if: github.event.inputs.environment == 'staging' && needs.pre-deploy-checks.outputs.can_deploy == 'true'
     environment:
       name: staging
-      url: https://staging.example.com
+      url: ${{ needs.pre-deploy-checks.outputs.staging_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Setup SSH (if SSH deployment enabled)
+        if: secrets.STAGING_SSH_PRIVATE_KEY != ''
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.STAGING_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to staging server
+      - name: Deploy to staging server (SSH)
+        if: secrets.STAGING_SSH_PRIVATE_KEY != ''
         run: |
           ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << 'EOF'
             set -e
@@ -142,11 +179,38 @@ jobs:
             echo "✅ Deployment to staging completed"
           EOF
 
+      - name: Deploy locally (if no SSH)
+        if: secrets.STAGING_SSH_PRIVATE_KEY == ''
+        run: |
+          echo "🔧 Local deployment mode (no SSH configured)"
+          
+          # Set environment variables
+          export BACKEND_IMAGE="${{ github.event.inputs.backend_image }}"
+          export FRONTEND_IMAGE="${{ github.event.inputs.frontend_image }}"
+          export ENVIRONMENT="staging"
+          
+          # Pull latest images
+          docker pull $BACKEND_IMAGE
+          docker pull $FRONTEND_IMAGE
+          
+          # Stop existing containers
+          docker-compose -f docker-compose.prod.yml down || true
+          
+          # Start new containers
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Wait for services to be ready
+          sleep 30
+          
+          echo "✅ Local staging deployment completed"
+
       - name: Health check
         run: |
-          echo "Performing health check..."
+          STAGING_URL="${{ needs.pre-deploy-checks.outputs.staging_url }}"
+          echo "Performing health check on $STAGING_URL..."
+          
           for i in {1..${{ env.HEALTH_CHECK_RETRIES }}}; do
-            if curl -f -s https://staging.example.com/health > /dev/null; then
+            if curl -f -s "$STAGING_URL/health" > /dev/null; then
               echo "✅ Health check passed"
               exit 0
             fi
@@ -158,9 +222,9 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          echo "Running smoke tests..."
-          # Add your smoke tests here
-          curl -f -s https://staging.example.com/api/v1/projects > /dev/null
+          STAGING_URL="${{ needs.pre-deploy-checks.outputs.staging_url }}"
+          echo "Running smoke tests on $STAGING_URL..."
+          curl -f -s "$STAGING_URL/api/v1/projects" > /dev/null
           echo "✅ Smoke tests passed"
 
   deploy-production:
@@ -170,19 +234,21 @@ jobs:
     if: github.event.inputs.environment == 'production' && needs.pre-deploy-checks.outputs.can_deploy == 'true'
     environment:
       name: production
-      url: https://example.com
+      url: ${{ needs.pre-deploy-checks.outputs.production_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Setup SSH (if SSH deployment enabled)
+        if: secrets.PRODUCTION_SSH_PRIVATE_KEY != ''
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.PRODUCTION_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create backup
+      - name: Create backup (SSH deployment)
+        if: secrets.PRODUCTION_SSH_PRIVATE_KEY != ''
         run: |
           ssh ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} << 'EOF'
             # Create database backup
@@ -194,7 +260,8 @@ jobs:
             echo "✅ Backup created"
           EOF
 
-      - name: Deploy to production server
+      - name: Deploy to production server (SSH)
+        if: secrets.PRODUCTION_SSH_PRIVATE_KEY != ''
         run: |
           ssh ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} << 'EOF'
             set -e
@@ -226,11 +293,42 @@ jobs:
             echo "✅ Production deployment completed"
           EOF
 
+      - name: Deploy locally (if no SSH)
+        if: secrets.PRODUCTION_SSH_PRIVATE_KEY == ''
+        run: |
+          echo "🔧 Local deployment mode (no SSH configured)"
+          
+          # Create local backup
+          mkdir -p ./backup
+          docker exec postgres pg_dump -U project_user project_manager_db > ./backup/db_$(date +%Y%m%d_%H%M%S).sql || echo "⚠️ Database backup failed"
+          
+          # Set environment variables
+          export BACKEND_IMAGE="${{ github.event.inputs.backend_image }}"
+          export FRONTEND_IMAGE="${{ github.event.inputs.frontend_image }}"
+          export ENVIRONMENT="production"
+          
+          # Pull latest images
+          docker pull $BACKEND_IMAGE
+          docker pull $FRONTEND_IMAGE
+          
+          # Rolling update strategy
+          docker-compose -f docker-compose.prod.yml up -d --no-deps backend
+          sleep 30
+          docker-compose -f docker-compose.prod.yml up -d --no-deps frontend
+          sleep 30
+          
+          # Clean up old images
+          docker image prune -f
+          
+          echo "✅ Local production deployment completed"
+
       - name: Health check
         run: |
-          echo "Performing production health check..."
+          PRODUCTION_URL="${{ needs.pre-deploy-checks.outputs.production_url }}"
+          echo "Performing production health check on $PRODUCTION_URL..."
+          
           for i in {1..${{ env.HEALTH_CHECK_RETRIES }}}; do
-            if curl -f -s https://example.com/health > /dev/null; then
+            if curl -f -s "$PRODUCTION_URL/health" > /dev/null; then
               echo "✅ Production health check passed"
               exit 0
             fi
@@ -242,9 +340,10 @@ jobs:
 
       - name: Run production smoke tests
         run: |
-          echo "Running production smoke tests..."
-          curl -f -s https://example.com/api/v1/projects > /dev/null
-          curl -f -s https://example.com > /dev/null
+          PRODUCTION_URL="${{ needs.pre-deploy-checks.outputs.production_url }}"
+          echo "Running production smoke tests on $PRODUCTION_URL..."
+          curl -f -s "$PRODUCTION_URL/api/v1/projects" > /dev/null
+          curl -f -s "$PRODUCTION_URL" > /dev/null
           echo "✅ Production smoke tests passed"
 
   post-deploy:
@@ -254,7 +353,7 @@ jobs:
     if: always() && needs.pre-deploy-checks.outputs.deployment_id
     steps:
       - name: Update deployment status
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const deployJob = '${{ github.event.inputs.environment }}' === 'staging' 
@@ -265,6 +364,10 @@ jobs:
             const description = deployJob === 'success' 
               ? 'Deployment completed successfully'
               : 'Deployment failed';
+              
+            const environmentUrl = '${{ github.event.inputs.environment }}' === 'staging' 
+              ? '${{ needs.pre-deploy-checks.outputs.staging_url }}'
+              : '${{ needs.pre-deploy-checks.outputs.production_url }}';
             
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
@@ -272,30 +375,25 @@ jobs:
               deployment_id: '${{ needs.pre-deploy-checks.outputs.deployment_id }}',
               state: state,
               description: description,
-              environment_url: '${{ github.event.inputs.environment }}' === 'staging' 
-                ? 'https://staging.example.com'
-                : 'https://example.com'
+              environment_url: environmentUrl
             });
 
-      - name: Send notification
-        if: always()
+      - name: Send notification (if configured)
+        if: always() && secrets.TELEGRAM_BOT_TOKEN != ''
         run: |
           STATUS="${{ job.status }}"
           ENV="${{ github.event.inputs.environment }}"
           
           if [ "$STATUS" = "success" ]; then
             MESSAGE="✅ Deployment to $ENV completed successfully!"
-            curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-              -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              -d "text=$MESSAGE" \
-              -d "parse_mode=HTML"
           else
             MESSAGE="❌ Deployment to $ENV failed!"
-            curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-              -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-              -d "text=$MESSAGE" \
-              -d "parse_mode=HTML"
           fi
+          
+          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "text=$MESSAGE" \
+            -d "parse_mode=HTML" || echo "⚠️ Notification failed"
 
       - name: Deployment summary
         run: |
@@ -306,4 +404,9 @@ jobs:
           echo "| Backend Image | ${{ github.event.inputs.backend_image }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend Image | ${{ github.event.inputs.frontend_image }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| URL | https://${{ github.event.inputs.environment == 'production' && 'example.com' || 'staging.example.com' }} |" >> $GITHUB_STEP_SUMMARY 
+          
+          if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+            echo "| URL | ${{ needs.pre-deploy-checks.outputs.staging_url }} |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| URL | ${{ needs.pre-deploy-checks.outputs.production_url }} |" >> $GITHUB_STEP_SUMMARY
+          fi 
