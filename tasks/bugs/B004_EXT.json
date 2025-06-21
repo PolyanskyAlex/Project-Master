@@ -1,0 +1,81 @@
+{
+  "id": "B004_EXT",
+  "title": "Исправление VS Code расширения - не подтягивается информация",
+  "description": "VS Code расширение не получает данные из API и не имеет собственного логирования",
+  "type": "bug",
+  "priority": "medium",
+  "status": "completed",
+  "assignee": "AI Agent",
+  "created_date": "2025-06-21",
+  "functional_block": "Extension",
+  
+  "problem_description": {
+    "observed_behavior": "VS Code расширение не отображает данные из Project Master API",
+    "expected_behavior": "Расширение должно подтягивать и отображать проекты, задачи и другие данные",
+    "error_messages": [],
+    "affected_components": [
+      "vscode-extension/src/services/ApiService.ts",
+      "vscode-extension/src/services/ServerDiscoveryService.ts",
+      "vscode-extension/package.json"
+    ]
+  },
+  
+  "root_cause": {
+    "category": "Configuration/Integration Issue",
+    "description": "Возможные проблемы с портами API, отсутствие логирования затрудняет диагностику",
+    "evidence": [
+      "Backend работает на порту 8083 вместо ожидаемого 8080",
+      "Отсутствует логирование в VS Code расширении",
+      "Нет видимых ошибок в интерфейсе расширения"
+    ]
+  },
+  
+  "solution": {
+    "approach": "Добавить логирование, исправить конфигурацию портов, улучшить error handling",
+    "files_to_modify": [
+      "vscode-extension/src/services/ApiService.ts",
+      "vscode-extension/src/services/ServerDiscoveryService.ts",
+      "vscode-extension/src/utils/Logger.ts",
+      "vscode-extension/src/extension.ts"
+    ],
+    "changes": [
+      {
+        "file": "vscode-extension/src/services/ServerDiscoveryService.ts",
+        "action": "improve_port_detection",
+        "description": "Улучшить автоматическое определение порта backend API"
+      },
+      {
+        "file": "vscode-extension/src/utils/Logger.ts",
+        "action": "add_file_logging",
+        "description": "Добавить логирование в файлы для расширения"
+      },
+      {
+        "file": "vscode-extension/src/services/ApiService.ts",
+        "action": "improve_error_handling",
+        "description": "Улучшить обработку ошибок и логирование API запросов"
+      }
+    ]
+  },
+  
+  "testing": {
+    "verification_steps": [
+      "Установить/переустановить расширение",
+      "Проверить подключение к API",
+      "Убедиться в отображении данных в расширении",
+      "Проверить логи расширения",
+      "Тестировать с различными портами backend"
+    ],
+    "regression_tests": [
+      "Тест подключения к API",
+      "Тест отображения данных",
+      "Тест логирования расширения",
+      "Тест автоопределения порта"
+    ]
+  },
+  
+  "impact": {
+    "severity": "medium",
+    "user_impact": "Разработчики не могут использовать VS Code расширение для управления проектами",
+    "business_impact": "Снижение продуктивности разработки"
+  }
+} 

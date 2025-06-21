@@ -1,0 +1,73 @@
+{
+  "id": "B003_LOG",
+  "title": "Исправление кодировки UTF-8 в логах backend",
+  "description": "Логи содержат искаженные символы \\ufffd при записи ошибок с русскими символами",
+  "type": "bug",
+  "priority": "high",
+  "status": "completed",
+  "assignee": "AI Agent",
+  "created_date": "2025-06-21",
+  "functional_block": "Logging",
+  
+  "problem_description": {
+    "observed_behavior": "Символы \\ufffd в логах при записи ошибок PostgreSQL с русскими символами",
+    "expected_behavior": "Корректное UTF-8 отображение всех символов в логах",
+    "error_messages": [
+      "\"response_body\":\"failed to connect to `user=postgres database=project_master_dev`: [::1]:5432 (localhost): failed SASL auth: \\ufffd\\ufffd\\ufffd\\ufffd\\ufffd\""
+    ],
+    "affected_components": [
+      "backend/utils/logger.go",
+      "backend/router/middleware.go"
+    ]
+  },
+  
+  "root_cause": {
+    "category": "Encoding Issue",
+    "description": "Отсутствует валидация UTF-8 при логировании ошибок с нелатинскими символами",
+    "evidence": [
+      "Символы \\ufffd в JSON логах",
+      "Ошибки PostgreSQL содержат русские символы",
+      "Нет проверки валидности UTF-8 в middleware"
+    ]
+  },
+  
+  "solution": {
+    "approach": "Добавить валидацию UTF-8 и безопасную обработку response body",
+    "files_to_modify": [
+      "backend/router/middleware.go",
+      "backend/utils/logger.go"
+    ],
+    "changes": [
+      {
+        "file": "backend/router/middleware.go",
+        "action": "add_utf8_validation",
+        "description": "Добавить проверку валидности UTF-8 для response_body перед логированием"
+      },
+      {
+        "file": "backend/utils/logger.go", 
+        "action": "improve_encoding",
+        "description": "Улучшить обработку кодировки при JSON маршалинге"
+      }
+    ]
+  },
+  
+  "testing": {
+    "verification_steps": [
+      "Вызвать ошибку с русскими символами",
+      "Проверить логи на отсутствие \\ufffd символов",
+      "Убедиться в читаемости JSON структуры логов",
+      "Тестировать с различными кодировками ошибок"
+    ],
+    "regression_tests": [
+      "Тест логирования UTF-8 символов",
+      "Тест логирования ошибок с различными кодировками",
+      "Валидация JSON структуры логов"
+    ]
+  },
+  
+  "impact": {
+    "severity": "high",
+    "user_impact": "Затрудненная отладка из-за нечитаемых логов",
+    "business_impact": "Снижение эффективности разработки и поддержки"
+  }
+} 

@@ -80,14 +80,19 @@ export class ApiService implements IApiService {
         // Request interceptor
         this.client.interceptors.request.use(
             (config) => {
-                this.logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+                this.logger.debug(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+                    baseURL: config.baseURL,
                     headers: config.headers,
                     data: config.data
                 });
                 return config;
             },
             (error) => {
-                this.logger.error('API Request Error', error);
+                this.logger.error('❌ API Request Error', {
+                    message: error.message,
+                    code: error.code,
+                    config: error.config
+                });
                 return Promise.reject(error);
             }
         );
@@ -95,18 +100,36 @@ export class ApiService implements IApiService {
         // Response interceptor
         this.client.interceptors.response.use(
             (response) => {
-                this.logger.debug(`API Response: ${response.status} ${response.config.url}`, {
-                    data: response.data
+                this.logger.debug(`✅ API Response: ${response.status} ${response.config.url}`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: response.data,
+                    responseTime: response.headers['x-response-time']
                 });
                 return response;
             },
             (error) => {
-                this.logger.error('API Response Error', {
+                const errorInfo = {
                     status: error.response?.status,
                     statusText: error.response?.statusText,
                     data: error.response?.data,
-                    url: error.config?.url
-                });
+                    url: error.config?.url,
+                    method: error.config?.method?.toUpperCase(),
+                    message: error.message,
+                    code: error.code,
+                    baseURL: error.config?.baseURL
+                };
+
+                if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+                    this.logger.error('🔌 API Connection Error - Server not reachable', errorInfo);
+                } else if (error.response?.status >= 500) {
+                    this.logger.error('🚨 API Server Error', errorInfo);
+                } else if (error.response?.status >= 400) {
+                    this.logger.warn('⚠️ API Client Error', errorInfo);
+                } else {
+                    this.logger.error('❌ API Unknown Error', errorInfo);
+                }
+                
                 return Promise.reject(error);
             }
         );

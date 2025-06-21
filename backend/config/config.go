@@ -14,12 +14,24 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	// Попробуем загрузить .env из текущей папки, затем из родительской
-	err := godotenv.Load()
+	// Приоритет загрузки конфигурации:
+	// 1. .env.local (для локальной разработки)
+	// 2. .env (для Docker и production)
+	// 3. Переменные окружения
+
+	// Попробуем загрузить .env.local из текущей папки, затем из родительской
+	err := godotenv.Load(".env.local")
 	if err != nil {
-		err = godotenv.Load("../.env")
+		err = godotenv.Load("../.env.local")
 		if err != nil {
-			log.Println("No .env file found, relying on environment variables")
+			// Если .env.local не найден, пробуем обычный .env
+			err = godotenv.Load()
+			if err != nil {
+				err = godotenv.Load("../.env")
+				if err != nil {
+					log.Println("No .env or .env.local file found, relying on environment variables")
+				}
+			}
 		}
 	}
 

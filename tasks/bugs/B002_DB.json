@@ -1,0 +1,68 @@
+{
+  "id": "B002_DB",
+  "title": "Исправление подключения к PostgreSQL - неправильный порт",
+  "description": "Backend не может подключиться к PostgreSQL из-за неправильного порта в конфигурации",
+  "type": "bug",
+  "priority": "critical",
+  "status": "completed",
+  "assignee": "AI Agent",
+  "created_date": "2025-06-21",
+  "functional_block": "Database",
+  
+  "problem_description": {
+    "observed_behavior": "Постоянные ошибки 'failed SASL auth' при подключении к PostgreSQL",
+    "expected_behavior": "Успешное подключение к PostgreSQL",
+    "error_messages": [
+      "failed to connect to `user=postgres database=project_master_dev`: [::1]:5432 (localhost): failed SASL auth"
+    ],
+    "affected_components": [
+      ".env.local",
+      "backend/database/db.go",
+      "backend/main.go"
+    ]
+  },
+  
+  "root_cause": {
+    "category": "Configuration Error",
+    "description": "PostgreSQL Docker контейнер работает на порту 5433, но .env.local указывает на порт 5432",
+    "evidence": [
+      "Docker ps показывает: 0.0.0.0:5433->5432/tcp",
+      "DATABASE_URL в .env.local содержит localhost:5432"
+    ]
+  },
+  
+  "solution": {
+    "approach": "Исправить порт PostgreSQL в конфигурации",
+    "files_to_modify": [
+      ".env.local"
+    ],
+    "changes": [
+      {
+        "file": ".env.local",
+        "action": "change_port",
+        "from": "postgres://postgres:password@localhost:5432/project_master_dev?sslmode=disable",
+        "to": "postgres://postgres:password@localhost:5433/project_master_dev?sslmode=disable"
+      }
+    ]
+  },
+  
+  "testing": {
+    "verification_steps": [
+      "Перезапустить backend",
+      "Проверить подключение к БД через /health endpoint",
+      "Убедиться в отсутствии ошибок SASL auth в логах",
+      "Проверить работу API endpoints, требующих БД"
+    ],
+    "regression_tests": [
+      "Тест подключения к БД",
+      "Тест health endpoint",
+      "Интеграционные тесты API"
+    ]
+  },
+  
+  "impact": {
+    "severity": "critical",
+    "user_impact": "Полная неработоспособность системы - нет доступа к данным",
+    "business_impact": "Система не функционирует"
+  }
+} 

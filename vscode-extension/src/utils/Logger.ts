@@ -1,12 +1,37 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class Logger {
     private outputChannel: vscode.OutputChannel;
     private logLevel: 'debug' | 'info' | 'warn' | 'error';
+    private logFilePath: string | null = null;
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('Project Master');
         this.logLevel = this.getLogLevel();
+        this.initializeFileLogging();
+    }
+
+    private initializeFileLogging(): void {
+        try {
+            const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+            if (workspaceRoot) {
+                const logsDir = path.join(workspaceRoot, 'logs', 'vscode-extension');
+                
+                // Создаем директорию для логов если её нет
+                if (!fs.existsSync(logsDir)) {
+                    fs.mkdirSync(logsDir, { recursive: true });
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                this.logFilePath = path.join(logsDir, `extension-${today}.log`);
+                
+                this.info('File logging initialized', { logFile: this.logFilePath });
+            }
+        } catch (error) {
+            console.error('Failed to initialize file logging:', error);
+        }
     }
 
     private getLogLevel(): 'debug' | 'info' | 'warn' | 'error' {
@@ -32,10 +57,34 @@ export class Logger {
         return formattedMessage;
     }
 
+    private formatJSONMessage(level: string, message: string, data?: any): string {
+        const logEntry = {
+            timestamp: new Date().toISOString(),
+            level: level.toUpperCase(),
+            message,
+            source: 'vscode-extension',
+            ...(data && { data })
+        };
+        
+        return JSON.stringify(logEntry);
+    }
+
+    private writeToFile(level: string, message: string, data?: any): void {
+        if (!this.logFilePath) return;
+        
+        try {
+            const jsonMessage = this.formatJSONMessage(level, message, data);
+            fs.appendFileSync(this.logFilePath, jsonMessage + '\n', 'utf8');
+        } catch (error) {
+            console.error('Failed to write to log file:', error);
+        }
+    }
+
     debug(message: string, data?: any): void {
         if (this.shouldLog('debug')) {
             const formattedMessage = this.formatMessage('debug', message, data);
             this.outputChannel.appendLine(formattedMessage);
+            this.writeToFile('debug', message, data);
         }
     }
 
@@ -43,6 +92,7 @@ export class Logger {
         if (this.shouldLog('info')) {
             const formattedMessage = this.formatMessage('info', message, data);
             this.outputChannel.appendLine(formattedMessage);
+            this.writeToFile('info', message, data);
         }
     }
 
@@ -51,6 +101,7 @@ export class Logger {
             const formattedMessage = this.formatMessage('warn', message, data);
             this.outputChannel.appendLine(formattedMessage);
             console.warn(formattedMessage);
+            this.writeToFile('warn', message, data);
         }
     }
 
@@ -68,6 +119,7 @@ export class Logger {
             const formattedMessage = this.formatMessage('error', message, errorData);
             this.outputChannel.appendLine(formattedMessage);
             console.error(formattedMessage);
+            this.writeToFile('error', message, errorData);
         }
     }
 
@@ -82,5 +134,9 @@ export class Logger {
     updateLogLevel(): void {
         this.logLevel = this.getLogLevel();
         this.info(`Log level updated to: ${this.logLevel}`);
+    }
+
+    getLogFilePath(): string | null {
+        return this.logFilePath;
     }
 } 

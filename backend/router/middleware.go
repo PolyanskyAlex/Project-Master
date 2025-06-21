@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"time"
+	"unicode/utf8"
 
 	"project-manager/utils"
 )
@@ -33,6 +34,27 @@ func (rw *responseWriter) WriteHeader(code int) {
 func (rw *responseWriter) Write(b []byte) (int, error) {
 	rw.body.Write(b)
 	return rw.ResponseWriter.Write(b)
+}
+
+// sanitizeUTF8 очищает строку от невалидных UTF-8 символов
+func sanitizeUTF8(s string) string {
+	if utf8.ValidString(s) {
+		return s
+	}
+
+	// Преобразуем в валидную UTF-8 строку
+	v := make([]rune, 0, len(s))
+	for i, r := range s {
+		if r == utf8.RuneError {
+			_, size := utf8.DecodeRuneInString(s[i:])
+			if size == 1 {
+				// Заменяем невалидные байты на знак замещения
+				continue
+			}
+		}
+		v = append(v, r)
+	}
+	return string(v)
 }
 
 // LoggingMiddleware логирует все HTTP запросы
@@ -74,16 +96,17 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 				if err := json.Unmarshal(requestBody, &jsonBody); err == nil {
 					logData["request_body"] = jsonBody
 				} else {
-					logData["request_body"] = string(requestBody)
+					logData["request_body"] = sanitizeUTF8(string(requestBody))
 				}
 			}
 		}
 
-		// Добавляем тело ответа для ошибок
+		// Добавляем тело ответа для ошибок с UTF-8 санитайзингом
 		if wrapped.statusCode >= 400 {
 			responseBody := wrapped.body.String()
 			if responseBody != "" {
-				logData["response_body"] = responseBody
+				// Санитайзируем response body для корректной UTF-8 кодировки
+				logData["response_body"] = sanitizeUTF8(responseBody)
 			}
 		}
 

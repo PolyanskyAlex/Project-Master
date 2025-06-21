@@ -68,13 +68,16 @@ export class ServerDiscoveryService {
             this.logger.debug('server-info.json file not found or inaccessible', error);
         }
 
-        // 3. Сканируем стандартные порты
-        const commonPorts = [8080, 8081, 8082, 8083, 8084, 8085, 3001, 3002];
+        // 3. Сканируем стандартные порты (расширенный диапазон)
+        const commonPorts = [8080, 8083, 8081, 8082, 8084, 8085, 8086, 8087, 8088, 8089, 3001, 3002, 3003];
+        this.logger.info(`Scanning ports: ${commonPorts.join(', ')}`);
+        
         for (const port of commonPorts) {
             const baseURL = `http://localhost:${port}`;
+            this.logger.debug(`Checking port ${port}...`);
             const isActive = await this.checkServerHealth(baseURL);
             if (isActive) {
-                this.logger.info(`Server discovered via port scanning: ${baseURL}`);
+                this.logger.info(`✅ Server discovered via port scanning: ${baseURL}`);
                 return {
                     baseURL,
                     port,
