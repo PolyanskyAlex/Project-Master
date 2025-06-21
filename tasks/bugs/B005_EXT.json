@@ -1,0 +1,55 @@
+{
+  "id": "B005_EXT",
+  "title": "Расширение Cursor IDE не отображает информацию - Backend не запущен",
+  "description": "Расширение Project Master в Cursor IDE не показывает никакой информации в панелях проектов, задач и планов. Анализ показал, что основная проблема - Backend API сервер не запущен в Docker Compose.",
+  "type": "bug",
+  "priority": "high",
+  "status": "fixed",
+  "functional_block": "EXT",
+  "components": [
+    "backend/main.go",
+    "docker-compose.yml",
+    "vscode-extension",
+    "logs система"
+  ],
+  "root_cause": "Backend API сервер не запущен, только база данных работает в Docker Compose",
+  "symptoms": [
+    "Расширение не показывает проекты",
+    "Расширение не показывает задачи", 
+    "Расширение не показывает план разработки",
+    "API недоступен по localhost:8080",
+    "Логи не создаются"
+  ],
+  "impact": "Критический - полная неработоспособность основного функционала расширения",
+  "reproduction_steps": [
+    "Открыть Cursor IDE",
+    "Проверить панель Project Master",
+    "Попытаться выполнить команды расширения",
+    "Проверить доступность API: curl http://localhost:8080/api/v1/health"
+  ],
+  "expected_behavior": "Расширение должно отображать проекты, задачи и план разработки из backend API",
+  "environment": {
+    "os": "Windows 10",
+    "docker": "Docker Compose",
+    "ide": "Cursor",
+    "backend_status": "не запущен"
+  },
+  "fix_approach": [
+    "Запустить backend сервер в Docker Compose",
+    "Проверить конфигурацию docker-compose.yml",
+    "Создать папку logs для расширения",
+    "Протестировать подключение API",
+    "Перезапустить расширение"
+  ],
+  "verification_criteria": [
+    "Backend API отвечает на localhost:8080",
+    "Расширение показывает проекты",
+    "Расширение показывает задачи",
+    "Расширение показывает план",
+    "Логи расширения создаются корректно"
+  ],
+  "created_at": "2024-12-21T20:48:00Z",
+  "updated_at": "2024-12-21T20:48:00Z",
+  "assigned_to": "system",
+  "estimated_effort": "30 минут"
+} 
