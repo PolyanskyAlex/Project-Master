@@ -25,7 +25,9 @@ import {
   Clear as ClearIcon,
   Download as DownloadIcon,
   Refresh as RefreshIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  ContentCopy as ContentCopyIcon,
+  Save as SaveIcon
 } from '@mui/icons-material';
 import { logger, LogLevel, LogEntry } from '../utils/logger';
 
@@ -53,11 +55,49 @@ const DevLogViewer: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `logs-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `frontend-logs-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const copyLogsToClipboard = async () => {
+    try {
+      const logText = filteredLogs.map(log => {
+        const timestamp = formatTimestamp(log.timestamp);
+        const level = getLevelName(log.level);
+        const source = log.source ? ` [${log.source}]` : '';
+        const data = log.data ? `\nData: ${JSON.stringify(log.data, null, 2)}` : '';
+        return `[${timestamp}] ${level}${source} - ${log.message}${data}`;
+      }).join('\n\n');
+
+      await navigator.clipboard.writeText(logText);
+      
+      // Показываем уведомление об успешном копировании
+      logger.info('Логи скопированы в буфер обмена', { 
+        count: filteredLogs.length 
+      }, 'DevLogViewer');
+    } catch (err) {
+      logger.error('Ошибка копирования логов', { error: err }, 'DevLogViewer');
+    }
+  };
+
+  const saveLogsToFile = async () => {
+    try {
+      const success = await logger.forceSaveToServer();
+      if (success) {
+        logger.info('Все логи принудительно сохранены на сервере', { 
+          count: logs.length 
+        }, 'DevLogViewer');
+      } else {
+        throw new Error('Force save failed');
+      }
+    } catch (err) {
+      logger.error('Ошибка принудительного сохранения логов', { error: err }, 'DevLogViewer');
+      // Fallback - сохраняем локально
+      exportLogs();
+    }
   };
 
   // Обновляем логи при открытии диалога
@@ -226,9 +266,21 @@ const DevLogViewer: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="Экспорт">
+            <Tooltip title="Экспорт JSON">
               <IconButton onClick={exportLogs}>
                 <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Копировать в буфер">
+              <IconButton onClick={copyLogsToClipboard}>
+                <ContentCopyIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Сохранить на сервере">
+              <IconButton onClick={saveLogsToFile}>
+                <SaveIcon />
               </IconButton>
             </Tooltip>
           </Box>

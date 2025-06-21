@@ -20,6 +20,9 @@ class Logger {
   private logs: LogEntry[] = [];
   private maxLogs: number = 1000;
   private sessionId: string;
+  private autoSaveInterval: number = 5 * 60 * 1000; // 5 минут
+  private autoSaveTimer?: NodeJS.Timeout;
+  private lastSaveIndex: number = 0;
 
   constructor(logLevel: LogLevel = LogLevel.INFO) {
     this.logLevel = logLevel;
@@ -27,6 +30,14 @@ class Logger {
     
     // Логируем начало сессии
     this.info('Logger initialized', { sessionId: this.sessionId });
+
+    // Запускаем автоматическое сохранение
+    this.startAutoSave();
+
+    // Сохраняем логи при закрытии страницы
+    window.addEventListener('beforeunload', () => {
+      this.saveLogsToServer(true);
+    });
   }
 
   private generateSessionId(): string {
@@ -177,6 +188,100 @@ class Logger {
 
   getSessionId(): string {
     return this.sessionId;
+  }
+
+  // Автоматическое сохранение логов
+  private startAutoSave(): void {
+    this.autoSaveTimer = setInterval(() => {
+      this.saveLogsToServer();
+    }, this.autoSaveInterval);
+  }
+
+  private stopAutoSave(): void {
+    if (this.autoSaveTimer) {
+      clearInterval(this.autoSaveTimer);
+      this.autoSaveTimer = undefined;
+    }
+  }
+
+  private async saveLogsToServer(isBeforeUnload: boolean = false): Promise<void> {
+    // Получаем только новые логи с последнего сохранения
+    const newLogs = this.logs.slice(this.lastSaveIndex);
+    
+    if (newLogs.length === 0) {
+      return;
+    }
+
+    try {
+      const logsData = {
+        timestamp: new Date().toISOString(),
+        logs: newLogs,
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        sessionId: this.sessionId,
+        isBeforeUnload
+      };
+
+      const response = await fetch('/api/v1/frontend-logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': process.env.REACT_APP_API_KEY || 'dev-api-key-12345'
+        },
+        body: JSON.stringify(logsData),
+        // Для beforeunload используем keepalive
+        keepalive: isBeforeUnload
+      });
+
+      if (response.ok) {
+        this.lastSaveIndex = this.logs.length;
+        if (!isBeforeUnload) {
+          this.debug('Logs auto-saved to server', { 
+            count: newLogs.length,
+            total: this.logs.length 
+          }, 'Logger');
+        }
+      }
+    } catch (error) {
+      if (!isBeforeUnload) {
+        this.error('Failed to auto-save logs to server', { error }, 'Logger');
+      }
+    }
+  }
+
+  // Принудительное сохранение всех логов
+  async forceSaveToServer(): Promise<boolean> {
+    try {
+      const logsData = {
+        timestamp: new Date().toISOString(),
+        logs: this.logs,
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        sessionId: this.sessionId,
+        isForced: true
+      };
+
+      const response = await fetch('/api/v1/frontend-logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': process.env.REACT_APP_API_KEY || 'dev-api-key-12345'
+        },
+        body: JSON.stringify(logsData)
+      });
+
+      if (response.ok) {
+        this.lastSaveIndex = this.logs.length;
+        this.info('All logs force-saved to server', { 
+          count: this.logs.length 
+        }, 'Logger');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      this.error('Failed to force-save logs to server', { error }, 'Logger');
+      return false;
+    }
   }
 }
 

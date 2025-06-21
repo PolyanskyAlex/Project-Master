@@ -89,6 +89,8 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 		executorService := services.NewExecutorService(executorRepo)
 		executorHandler := handlers.NewExecutorHandler(executorService)
 
+		frontendLogHandler := handlers.NewFrontendLogHandler()
+
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware(authService))
 
@@ -187,6 +189,11 @@ func NewRouter(cfg *config.Config) *chi.Mux {
 				r.Route("/executors", func(r chi.Router) {
 					r.Get("/", executorHandler.GetAllExecutors)
 					r.Post("/", executorHandler.CreateExecutor)
+				})
+
+				// Frontend логи
+				r.Route("/frontend-logs", func(r chi.Router) {
+					r.Post("/", frontendLogHandler.SaveFrontendLogs)
 				})
 			})
 
