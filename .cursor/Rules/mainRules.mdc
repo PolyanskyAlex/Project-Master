@@ -28,7 +28,7 @@ alwaysApply: true
 
   "bugfixingRules": {
     "trigger_phrases": ["ошибка", "проблема", "не работает", "сломалось"],
-    "rule_file": ".cursor/rules/bugfixing.mdc",
+    "rule_file": ".cursor/pipelines/bugfix_pipeline.mdc",
     "description": "Правила для исправления ошибок."
   },
 
@@ -45,7 +45,7 @@ alwaysApply: true
   },
 
   "documentationRules": {
-    "trigger_phrases": ["напиши закрывающую документацию", "закрой проект"],
+    "trigger_phrases": ["напиши документацию"],
     "rule_files": {
         "userDocsRules": ".cursor/rules/user_docs.mdc",
         "techDocsRules": ".cursor/rules/tech_docs.mdc"
@@ -58,5 +58,6 @@ alwaysApply: true
     "rule_file": ".cursor/rules/project_closure_docs.mdc",
     "description": "Правила для создания финальной проектной документации."
   }
+
 
 }

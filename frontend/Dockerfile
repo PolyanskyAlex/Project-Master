@@ -25,13 +25,10 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Копирование собранного приложения
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Создание непривилегированного пользователя
-RUN addgroup -g 1001 -S nginx-user && \
-    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx-user nginx-user && \
-    chown -R nginx-user:nginx-user /usr/share/nginx/html /var/cache/nginx /var/run /var/log/nginx
-
-# Переключение на непривилегированного пользователя
-USER nginx-user
+# Создание необходимых директорий и установка прав
+RUN mkdir -p /var/cache/nginx /var/run/nginx /var/log/nginx && \
+    chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/run/nginx /var/log/nginx && \
+    chmod -R 755 /var/cache/nginx /var/run/nginx /var/log/nginx
 
 # Открытие порта
 EXPOSE 80
