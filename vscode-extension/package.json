@@ -2,7 +2,7 @@
   "name": "project-master-extension",
   "displayName": "Project Master",
   "description": "VS Code extension for Project Master - AI-driven project management system with enhanced Tree View navigation",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "project-master",
   "engines": {
     "vscode": "^1.96.0"
@@ -57,6 +57,12 @@
         "title": "Refresh Projects",
         "category": "Project Master",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "projectMaster.test",
+        "title": "Test Extension",
+        "category": "Project Master",
+        "icon": "$(debug)"
       },
       {
         "command": "projectMaster.refreshTasks",

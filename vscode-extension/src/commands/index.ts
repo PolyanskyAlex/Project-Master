@@ -372,6 +372,20 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
         }
     });
 
+    // Test command for debugging
+    const testCommand = vscode.commands.registerCommand('projectMaster.test', async () => {
+        console.log('=== PROJECT MASTER: TEST COMMAND EXECUTED ===');
+        try {
+            const message = `Extension is working! API Service: ${deps.cachedApiService ? 'Cached' : 'Regular'}`;
+            console.log('Test command result:', message);
+            vscode.window.showInformationMessage(message);
+            logger.info('Test command executed successfully');
+        } catch (error) {
+            console.error('Test command failed:', error);
+            vscode.window.showErrorMessage(`Test command failed: ${error}`);
+        }
+    });
+
     // Show statistics command
     const showStatsCommand = vscode.commands.registerCommand('projectMaster.showStats', async () => {
         try {
@@ -459,6 +473,7 @@ ${selectedProject ? `
         searchTasksCommand,
         filterByStatusCommand,
         clearFiltersCommand,
+        testCommand,
         showStatsCommand,
         executeMcpCommand,
         validateMcpCommand,
@@ -483,4 +498,25 @@ ${selectedProject ? `
         commandsInDeps: Object.keys(deps),
         registrationComplete: true
     });
+    
+    // Verify commands are actually available
+    setTimeout(async () => {
+        try {
+            const allCommands = await vscode.commands.getCommands(true);
+            const projectMasterCommands = allCommands.filter(cmd => cmd.startsWith('projectMaster.'));
+            console.log('=== PROJECT MASTER: COMMAND VERIFICATION ===');
+            console.log('Total commands in VS Code:', allCommands.length);
+            console.log('Project Master commands found:', projectMasterCommands.length);
+            console.log('Project Master commands list:', projectMasterCommands);
+            
+            if (projectMasterCommands.includes('projectMaster.refreshProjects')) {
+                console.log('✅ refreshProjects command is available');
+            } else {
+                console.error('❌ refreshProjects command NOT FOUND');
+            }
+            
+        } catch (error) {
+            console.error('Failed to verify commands:', error);
+        }
+    }, 1000);
 } 

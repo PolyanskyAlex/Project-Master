@@ -32,10 +32,8 @@ export class PlanProvider implements vscode.TreeDataProvider<PlanTreeItem> {
         private apiService: ApiService,
         private logger: Logger
     ) {
-        // Listen for project selection events
-        vscode.commands.registerCommand('projectMaster.projectSelected', (project: Project) => {
-            this.setSelectedProject(project);
-        });
+        // Note: projectMaster.projectSelected command is registered in extension.ts
+        // This provider listens for project selection changes through setSelectedProject method
     }
 
     refresh(): void {

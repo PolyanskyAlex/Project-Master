@@ -1,0 +1,49 @@
+{
+  "id": "B006_EXT",
+  "title": "Команда projectMaster.refreshProjects не найдена в Cursor IDE",
+  "description": "После исправления проблемы с backend API, расширение не может найти зарегистрированные команды. Команда 'projectMaster.refreshProjects' возвращает ошибку 'command not found'.",
+  "type": "bug",
+  "priority": "high",
+  "status": "fixed",
+  "functional_block": "EXT",
+  "components": [
+    "vscode-extension/src/extension.ts",
+    "vscode-extension/src/commands/index.ts",
+    "vscode-extension/package.json"
+  ],
+  "root_cause": "Двойная регистрация команды 'projectMaster.projectSelected' в PlanProvider и неправильные URL API без префикса /v1/",
+  "symptoms": [
+    "Команда projectMaster.refreshProjects не найдена",
+    "Расширение может не активироваться полностью",
+    "Возможны ошибки в логах расширения"
+  ],
+  "impact": "Критический - основные команды расширения недоступны",
+  "reproduction_steps": [
+    "Открыть Cursor IDE",
+    "Попытаться выполнить команду projectMaster.refreshProjects",
+    "Получить ошибку 'command not found'"
+  ],
+  "expected_behavior": "Команда должна выполняться и обновлять список проектов",
+  "environment": {
+    "ide": "Cursor",
+    "extension": "project-master-extension v0.4.0",
+    "backend_status": "работает"
+  },
+  "fix_approach": [
+    "Проверить логи активации расширения",
+    "Убедиться что extension.ts выполняется без ошибок", 
+    "Проверить package.json конфигурацию",
+    "Добавить дополнительное логирование активации",
+    "Протестировать перезагрузку расширения"
+  ],
+  "verification_criteria": [
+    "Команда projectMaster.refreshProjects выполняется успешно",
+    "Все команды расширения доступны",
+    "Логи показывают успешную активацию",
+    "Tree View панели работают корректно"
+  ],
+  "created_at": "2024-12-21T21:00:00Z",
+  "updated_at": "2024-12-21T21:00:00Z",
+  "assigned_to": "system",
+  "estimated_effort": "45 минут"
+} 

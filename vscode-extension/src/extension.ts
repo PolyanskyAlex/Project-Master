@@ -15,6 +15,8 @@ export function activate(context: vscode.ExtensionContext) {
     const logger = new Logger();
     logger.info('Project Master extension is being activated...');
     console.log('=== Project Master: activate() called ===');
+    console.log('Extension activation event triggered');
+    console.log('Context subscriptions before activation:', context.subscriptions.length);
 
     try {
         // Initialize services
@@ -213,11 +215,18 @@ export function activate(context: vscode.ExtensionContext) {
             apiService: cachedApiService ? 'CachedApiService' : 'ApiService'
         });
         console.log('=== Project Master: activate() finished ===');
+        console.log('Final context subscriptions count:', context.subscriptions.length);
+        console.log('Extension activation completed successfully');
 
     } catch (error) {
+        console.error('=== Project Master: ACTIVATION ERROR ===', error);
         logger.error('Failed to activate Project Master extension', error);
         vscode.window.showErrorMessage(
             'Failed to activate Project Master extension. Please check the logs and configuration.'
+        );
+        // Show detailed error to user
+        vscode.window.showErrorMessage(
+            `Extension activation failed: ${error instanceof Error ? error.message : String(error)}`
         );
     }
 }
