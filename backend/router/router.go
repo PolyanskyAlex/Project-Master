@@ -42,8 +42,9 @@ func AuthMiddleware(authService *services.AuthService) func(next http.Handler) h
 func NewRouter(cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
 
-	// Добавляем CORS middleware
-	r.Use(corsMiddleware)
+	// Добавляем middleware
+	r.Use(LoggingMiddleware) // Логирование HTTP запросов
+	r.Use(corsMiddleware)    // CORS
 
 	// Публичные маршруты
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

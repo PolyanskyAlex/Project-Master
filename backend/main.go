@@ -17,27 +17,65 @@ import (
 func main() {
 	fmt.Println("Project Manager Backend")
 
+	// Инициализация логгера
+	logDir := "./logs"
+	if os.Getenv("LOG_DIR") != "" {
+		logDir = os.Getenv("LOG_DIR")
+	}
+
+	// В Docker контейнере логи пишутся в /var/log/app
+	if _, err := os.Stat("/var/log/app"); err == nil {
+		logDir = "/var/log/app"
+	}
+
+	logLevel := utils.INFO
+	if os.Getenv("DEBUG") == "true" || os.Getenv("ENV") == "development" {
+		logLevel = utils.DEBUG
+	}
+
+	if err := utils.InitLogger(logDir, logLevel); err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+	}
+
+	utils.Info("Application starting", map[string]interface{}{
+		"log_dir":   logDir,
+		"log_level": logLevel.String(),
+	})
+
 	// Загрузка конфигурации
 	cfg := config.LoadConfig()
 
 	// Подключение к базе данных (опционально)
 	if cfg.DatabaseURL != "" {
-		fmt.Println("Attempting to connect to database...")
+		utils.Info("Attempting to connect to database", map[string]interface{}{
+			"database_url": cfg.DatabaseURL,
+		})
 		err := database.ConnectDB(cfg.DatabaseURL)
 		if err != nil {
-			fmt.Printf("Database connection failed: %v\n", err)
-			fmt.Println("Continuing without database...")
+			utils.Error("Database connection failed", map[string]interface{}{
+				"error": err.Error(),
+			})
+			utils.Warn("Continuing without database")
 		} else {
+			utils.Info("Database connected successfully")
+
 			// Применение миграций
 			migrationsPath := "./database/migrations"
+			utils.Info("Running database migrations", map[string]interface{}{
+				"migrations_path": migrationsPath,
+			})
 			err = database.RunMigrations(cfg.DatabaseURL, migrationsPath)
 			if err != nil {
-				fmt.Printf("Migration failed: %v\n", err)
-				fmt.Println("Continuing without migrations...")
+				utils.Error("Migration failed", map[string]interface{}{
+					"error": err.Error(),
+				})
+				utils.Warn("Continuing without migrations")
+			} else {
+				utils.Info("Database migrations completed successfully")
 			}
 		}
 	} else {
-		fmt.Println("DATABASE_URL not set, skipping database connection")
+		utils.Warn("DATABASE_URL not set, skipping database connection")
 	}
 
 	// Создание роутера
@@ -46,23 +84,34 @@ func main() {
 	// Определение порта с автоматическим поиском свободного
 	preferredPort, err := utils.ParsePort(cfg.ServerPort)
 	if err != nil {
-		log.Printf("Ошибка парсинга порта: %v, используем порт по умолчанию 8080", err)
+		utils.Warn("Port parsing error, using default port 8080", map[string]interface{}{
+			"error":        err.Error(),
+			"config_port":  cfg.ServerPort,
+			"default_port": 8080,
+		})
 		preferredPort = 8080
 	}
 
 	actualPort, err := utils.FindAvailablePort(preferredPort)
 	if err != nil {
-		log.Fatalf("Не удалось найти свободный порт: %v", err)
+		utils.Fatal("Failed to find available port", map[string]interface{}{
+			"error": err.Error(),
+		})
 	}
 
 	// Если порт изменился, уведомляем пользователя
 	if actualPort != preferredPort {
-		fmt.Printf("⚠️  Порт %d занят, используем порт %d\n", preferredPort, actualPort)
+		utils.Warn("Preferred port is busy, using alternative port", map[string]interface{}{
+			"preferred_port": preferredPort,
+			"actual_port":    actualPort,
+		})
 	}
 
 	// Записываем информацию о сервере для frontend
 	if err := utils.WriteServerInfo(actualPort); err != nil {
-		log.Printf("Предупреждение: не удалось записать информацию о сервере: %v", err)
+		utils.Warn("Failed to write server info", map[string]interface{}{
+			"error": err.Error(),
+		})
 	}
 
 	// Настройка graceful shutdown
@@ -70,12 +119,18 @@ func main() {
 
 	// Запуск HTTP-сервера
 	address := fmt.Sprintf(":%d", actualPort)
-	log.Printf("🚀 Server starting on port %d", actualPort)
-	log.Printf("📡 API доступен по адресу: http://localhost:%d", actualPort)
-	log.Printf("🔗 Health check: http://localhost:%d/health", actualPort)
+
+	utils.Info("🚀 Server starting", map[string]interface{}{
+		"port":       actualPort,
+		"address":    address,
+		"api_url":    fmt.Sprintf("http://localhost:%d", actualPort),
+		"health_url": fmt.Sprintf("http://localhost:%d/health", actualPort),
+	})
 
 	if err := http.ListenAndServe(address, r); err != nil {
-		log.Fatalf("Ошибка запуска сервера: %v", err)
+		utils.Fatal("Server startup failed", map[string]interface{}{
+			"error": err.Error(),
+		})
 	}
 }
 
@@ -86,12 +141,12 @@ func setupGracefulShutdown() {
 
 	go func() {
 		<-c
-		fmt.Println("\n🛑 Получен сигнал завершения, останавливаем сервер...")
+		utils.Info("🛑 Shutdown signal received, stopping server")
 
 		// Очищаем файл с информацией о сервере
 		utils.CleanupServerInfo()
 
-		fmt.Println("✅ Сервер остановлен")
+		utils.Info("✅ Server stopped gracefully")
 		os.Exit(0)
 	}()
 }
