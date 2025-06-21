@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Master API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .endpoint { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 3px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .status { padding: 5px 10px; border-radius: 3px; color: white; font-weight: bold; }
+        .status.success { background: #28a745; }
+        .status.error { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Project Master API Test</h1>
+        
+        <div class="endpoint">
+            <h3>Health Check</h3>
+            <button onclick="testHealth()">Test /health</button>
+            <div id="health-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="endpoint">
+            <h3>Projects API</h3>
+            <button onclick="testProjects()">Get Projects</button>
+            <button onclick="createProject()">Create Project</button>
+            <div id="projects-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="endpoint">
+            <h3>Tasks API</h3>
+            <button onclick="testTasks()">Get Tasks</button>
+            <div id="tasks-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="endpoint">
+            <h3>Functional Blocks API</h3>
+            <button onclick="testFunctionalBlocks()">Get Functional Blocks</button>
+            <div id="fb-result" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        const API_KEY = 'dev-api-key-12345';
+
+        function showResult(elementId, data, status) {
+            const element = document.getElementById(elementId);
+            const statusClass = status >= 200 && status < 300 ? 'success' : 'error';
+            element.innerHTML = `
+                <div class="status ${statusClass}">Status: ${status}</div>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            element.style.display = 'block';
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.text();
+                showResult('health-result', data, response.status);
+            } catch (error) {
+                showResult('health-result', error.message, 0);
+            }
+        }
+
+        async function testProjects() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects`, {
+                    headers: { 'X-API-Key': API_KEY }
+                });
+                const data = await response.json();
+                showResult('projects-result', data, response.status);
+            } catch (error) {
+                showResult('projects-result', error.message, 0);
+            }
+        }
+
+        async function createProject() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Demo Project',
+                        description: 'Created from web interface',
+                        status: 'active'
+                    })
+                });
+                const data = await response.json();
+                showResult('projects-result', data, response.status);
+            } catch (error) {
+                showResult('projects-result', error.message, 0);
+            }
+        }
+
+        async function testTasks() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/tasks`, {
+                    headers: { 'X-API-Key': API_KEY }
+                });
+                const data = await response.json();
+                showResult('tasks-result', data, response.status);
+            } catch (error) {
+                showResult('tasks-result', error.message, 0);
+            }
+        }
+
+        async function testFunctionalBlocks() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/functional-blocks`, {
+                    headers: { 'X-API-Key': API_KEY }
+                });
+                const data = await response.json();
+                showResult('fb-result', data, response.status);
+            } catch (error) {
+                showResult('fb-result', error.message, 0);
+            }
+        }
+    </script>
+</body>
+</html> 

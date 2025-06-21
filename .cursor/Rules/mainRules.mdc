@@ -3,11 +3,6 @@ description:
 globs: 
 alwaysApply: true
 ---
----
-description: 
-globs: 
-alwaysApply: true
----
 {
   "context": "main_router",
   "description": "Главный файл-маршрутизатор. Определяет, какой набор правил использовать для конкретного типа работы. Также задает базовое поведение AI-агента.",
@@ -31,6 +26,12 @@ alwaysApply: true
     "description": "Запускает пайплайн для выполнения задач и подзадач разработки, выполни все пункты pipeline неукоснительно."
   },
 
+  "bugfixingRules": {
+    "trigger_phrases": ["ошибка", "проблема", "не работает", "сломалось"],
+    "rule_file": ".cursor/rules/bugfixing.mdc",
+    "description": "Правила для исправления ошибок."
+  },
+
   "deploymentRules": {
     "trigger_phrases": ["задеплой", "выполни задачу деплоя", "разверни приложение"],
     "rule_file": ".cursor/pipelines/deploy_pipeline.mdc",
@@ -44,8 +45,18 @@ alwaysApply: true
   },
 
   "documentationRules": {
-    "trigger_phrases": ["напиши документацию", "закрой проект"],
+    "trigger_phrases": ["напиши закрывающую документацию", "закрой проект"],
+    "rule_files": {
+        "userDocsRules": ".cursor/rules/user_docs.mdc",
+        "techDocsRules": ".cursor/rules/tech_docs.mdc"
+    },
+    "description": "Правила для создания финальной проектной документации."
+  },
+
+  "closureDocumentationRules": {
+    "trigger_phrases": ["напиши закрывающую документацию", "закрой проект"],
     "rule_file": ".cursor/rules/project_closure_docs.mdc",
     "description": "Правила для создания финальной проектной документации."
   }
+
 }

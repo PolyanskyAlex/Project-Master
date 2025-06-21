@@ -1,12 +1,18 @@
 import * as vscode from 'vscode';
 import { ExtensionConfig } from '../types';
 import { ConfigValidator, ValidationResult } from '../utils/ConfigValidator';
+import { ServerDiscoveryService } from './ServerDiscoveryService';
+import { Logger } from '../utils/Logger';
 
 export class ConfigurationService {
     private config: vscode.WorkspaceConfiguration;
+    private serverDiscovery: ServerDiscoveryService | undefined;
 
-    constructor() {
+    constructor(logger?: Logger) {
         this.config = vscode.workspace.getConfiguration('projectMaster');
+        if (logger) {
+            this.serverDiscovery = new ServerDiscoveryService(logger);
+        }
     }
 
     updateConfiguration(): void {
@@ -28,6 +34,16 @@ export class ConfigurationService {
 
     getApiUrl(): string {
         return this.config.get<string>('apiUrl', 'http://localhost:8080');
+    }
+
+    async getApiUrlWithDiscovery(): Promise<string> {
+        if (this.serverDiscovery) {
+            const result = await this.serverDiscovery.discoverBackendServer();
+            if (result.discovered) {
+                return result.baseURL;
+            }
+        }
+        return this.getApiUrl();
     }
 
     getApiKey(): string {

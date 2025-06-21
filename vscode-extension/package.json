@@ -19,7 +19,10 @@
     "development"
   ],
   "activationEvents": [
-    "*"
+    "*",
+    "onStartupFinished",
+    "onCommand:projectMaster.syncPlan",
+    "onCommand:projectMaster.refreshProjects"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -275,6 +278,24 @@
         "title": "Show Cache Statistics",
         "category": "Project Master",
         "icon": "$(graph)"
+      },
+      {
+        "command": "projectMaster.discoverServer",
+        "title": "Discover Backend Server",
+        "category": "Project Master",
+        "icon": "$(search)"
+      },
+      {
+        "command": "projectMaster.setupApi",
+        "title": "Setup API Configuration",
+        "category": "Project Master",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "projectMaster.testConnection",
+        "title": "Test API Connection",
+        "category": "Project Master",
+        "icon": "$(pulse)"
       },
       {
         "command": "projectMaster.cache.clear",
@@ -698,7 +719,7 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "test:unit": "mocha out/test/suite/**/*.test.js",
-    "package": "vsce package",
+    "package": "vsce package --allow-star-activation",
     "publish": "vsce publish"
   },
   "devDependencies": {

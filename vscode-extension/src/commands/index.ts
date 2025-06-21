@@ -26,7 +26,12 @@ interface CommandDependencies {
 }
 
 export function registerCommands(context: vscode.ExtensionContext, deps: CommandDependencies): void {
-    console.log('=== Project Master: registerCommands() START ===');
+    console.log('=== PROJECT MASTER: REGISTER COMMANDS START ===');
+    console.log('Commands registration context:', {
+        subscriptions: context.subscriptions.length,
+        deps: Object.keys(deps)
+    });
+    
     const { apiService, cachedApiService, configService, logger, projectsProvider, tasksProvider, planProvider } = deps;
 
     // Use cached API service if available
@@ -91,8 +96,11 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
 
     // Refresh commands with enhanced feedback
     const refreshProjectsCommand = vscode.commands.registerCommand('projectMaster.refreshProjects', async () => {
-        console.log('=== Project Master: refreshProjectsCommand registered ===');
+        console.log('=== PROJECT MASTER: REFRESH PROJECTS COMMAND EXECUTED ===');
+        logger.info('Refresh projects command called');
+        
         try {
+            console.log('Starting projects refresh...');
             logger.info('Refreshing projects...');
             
             await vscode.window.withProgress({
@@ -104,20 +112,27 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
                 
                 // Clear cache if using cached API service
                 if (cachedApiService) {
+                    console.log('Clearing cached projects data...');
                     cachedApiService.invalidatePattern('projects:.*');
                 }
                 
+                console.log('Calling projectsProvider.refresh()...');
                 await projectsProvider.refresh();
+                console.log('projectsProvider.refresh() completed');
                 
                 progress.report({ increment: 100, message: 'Projects refreshed!' });
             });
             
             const projectCount = projectsProvider.getProjects().length;
-            vscode.window.showInformationMessage(`${projectCount} projects loaded successfully.`);
+            const message = `${projectCount} projects loaded successfully.`;
+            console.log('Refresh result:', message);
+            logger.info(message);
+            vscode.window.showInformationMessage(message);
             
         } catch (error) {
+            console.error('Refresh projects command failed:', error);
             logger.error('Failed to refresh projects', error);
-            vscode.window.showErrorMessage('Failed to refresh projects. Please try again.');
+            vscode.window.showErrorMessage(`Failed to refresh projects: ${error}`);
         }
     });
 
@@ -153,13 +168,20 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
 
     // Enhanced sync plan command
     const syncPlanCommand = vscode.commands.registerCommand('projectMaster.syncPlan', async () => {
-        console.log('=== Project Master: syncPlanCommand registered ===');
+        console.log('=== PROJECT MASTER: SYNC PLAN COMMAND EXECUTED ===');
+        logger.info('Sync plan command called');
+        
         try {
             const selectedProject = projectsProvider.getSelectedProject();
+            console.log('Selected project for sync:', selectedProject?.name || 'None');
             
             if (!selectedProject) {
+                const message = 'No project selected. Please select a project first.';
+                logger.warn(message);
+                console.log('Warning:', message);
+                
                 vscode.window.showWarningMessage(
-                    'No project selected. Please select a project first.',
+                    message,
                     'Select Project'
                 ).then(selection => {
                     if (selection === 'Select Project') {
@@ -169,11 +191,15 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
                 return;
             }
             
+            console.log('Calling planProvider.syncPlan()...');
             await planProvider.syncPlan();
+            console.log('planProvider.syncPlan() completed successfully');
+            logger.info('Development plan synced successfully');
             
         } catch (error) {
+            console.error('Sync plan command failed:', error);
             logger.error('Failed to sync development plan', error);
-            vscode.window.showErrorMessage('Failed to sync development plan. Please try again.');
+            vscode.window.showErrorMessage(`Failed to sync development plan: ${error}`);
         }
     });
 
@@ -440,6 +466,21 @@ ${selectedProject ? `
         findMcpFilesCommand
     );
 
-    logger.info('All commands registered successfully');
-    console.log('=== Project Master: registerCommands() END ===');
+    // Verify commands were registered successfully
+    const totalCommands = context.subscriptions.length;
+    
+    console.log('=== PROJECT MASTER: COMMAND REGISTRATION VERIFICATION ===');
+    console.log('Total subscriptions added to context:', totalCommands);
+    console.log('Critical commands registered:', {
+        syncPlan: 'projectMaster.syncPlan',
+        refreshProjects: 'projectMaster.refreshProjects'
+    });
+    
+    logger.info(`All commands registered successfully. Total subscriptions: ${totalCommands}`);
+    console.log('=== PROJECT MASTER: REGISTER COMMANDS END ===');
+    console.log('Final registration summary:', {
+        totalSubscriptions: totalCommands,
+        commandsInDeps: Object.keys(deps),
+        registrationComplete: true
+    });
 } 

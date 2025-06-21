@@ -38,12 +38,47 @@ export class ApiService implements IApiService {
             timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
-                ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` })
+                ...(config.apiKey && { 'X-API-Key': config.apiKey })
             }
         });
 
+        this.client = client;
+        this.setupInterceptors();
+
+        return client;
+    }
+
+    updateConfiguration(): void {
+        this.configService.updateConfiguration();
+        this.client = this.createClient();
+        this.logger.info('API client configuration updated');
+    }
+
+    async updateConfigurationWithDiscovery(): Promise<void> {
+        this.configService.updateConfiguration();
+        
+        // Попытка обнаружить сервер
+        const apiUrl = await this.configService.getApiUrlWithDiscovery();
+        const config = this.configService.getConfig();
+        
+        this.client = axios.create({
+            baseURL: apiUrl,
+            timeout: 10000,
+            headers: {
+                'Content-Type': 'application/json',
+                ...(config.apiKey && { 'X-API-Key': config.apiKey })
+            }
+        });
+
+        // Настройка интерцепторов
+        this.setupInterceptors();
+        
+        this.logger.info(`API client updated with discovered server: ${apiUrl}`);
+    }
+
+    private setupInterceptors(): void {
         // Request interceptor
-        client.interceptors.request.use(
+        this.client.interceptors.request.use(
             (config) => {
                 this.logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
                     headers: config.headers,
@@ -58,7 +93,7 @@ export class ApiService implements IApiService {
         );
 
         // Response interceptor
-        client.interceptors.response.use(
+        this.client.interceptors.response.use(
             (response) => {
                 this.logger.debug(`API Response: ${response.status} ${response.config.url}`, {
                     data: response.data
@@ -75,20 +110,12 @@ export class ApiService implements IApiService {
                 return Promise.reject(error);
             }
         );
-
-        return client;
-    }
-
-    updateConfiguration(): void {
-        this.configService.updateConfiguration();
-        this.client = this.createClient();
-        this.logger.info('API client configuration updated');
     }
 
     // Projects
     async getProjects(): Promise<Project[]> {
         try {
-            const response: AxiosResponse<ApiResponse<Project[]>> = await this.client.get('/api/projects');
+            const response: AxiosResponse<ApiResponse<Project[]>> = await this.client.get('/api/v1/projects');
             return response.data.data;
         } catch (error) {
             this.logger.error('Failed to fetch projects', error);
@@ -98,7 +125,7 @@ export class ApiService implements IApiService {
 
     async getProject(id: string): Promise<Project> {
         try {
-            const response: AxiosResponse<ApiResponse<Project>> = await this.client.get(`/api/projects/${id}`);
+            const response: AxiosResponse<ApiResponse<Project>> = await this.client.get(`/api/v1/projects/${id}`);
             return response.data.data;
         } catch (error) {
             this.logger.error(`Failed to fetch project ${id}`, error);
@@ -108,7 +135,7 @@ export class ApiService implements IApiService {
 
     async createProject(project: CreateProjectRequest): Promise<Project> {
         try {
-            const response: AxiosResponse<ApiResponse<Project>> = await this.client.post('/api/projects', project);
+            const response: AxiosResponse<ApiResponse<Project>> = await this.client.post('/api/v1/projects', project);
             return response.data.data;
         } catch (error) {
             this.logger.error('Failed to create project', error);
@@ -119,7 +146,7 @@ export class ApiService implements IApiService {
     // Tasks
     async getTasks(projectId?: string): Promise<Task[]> {
         try {
-            const url = projectId ? `/api/tasks?project_id=${projectId}` : '/api/tasks';
+            const url = projectId ? `/api/v1/tasks?project_id=${projectId}` : '/api/v1/tasks';
             const response: AxiosResponse<ApiResponse<Task[]>> = await this.client.get(url);
             return response.data.data;
         } catch (error) {
@@ -130,7 +157,7 @@ export class ApiService implements IApiService {
 
     async getTask(id: string): Promise<Task> {
         try {
-            const response: AxiosResponse<ApiResponse<Task>> = await this.client.get(`/api/tasks/${id}`);
+            const response: AxiosResponse<ApiResponse<Task>> = await this.client.get(`/api/v1/tasks/${id}`);
             return response.data.data;
         } catch (error) {
             this.logger.error(`Failed to fetch task ${id}`, error);
@@ -140,7 +167,7 @@ export class ApiService implements IApiService {
 
     async createTask(task: CreateTaskRequest): Promise<Task> {
         try {
-            const response: AxiosResponse<ApiResponse<Task>> = await this.client.post('/api/tasks', task);
+            const response: AxiosResponse<ApiResponse<Task>> = await this.client.post('/api/v1/tasks', task);
             return response.data.data;
         } catch (error) {
             this.logger.error('Failed to create task', error);
@@ -150,7 +177,7 @@ export class ApiService implements IApiService {
 
     async updateTask(id: string, task: UpdateTaskRequest): Promise<Task> {
         try {
-            const response: AxiosResponse<ApiResponse<Task>> = await this.client.put(`/api/tasks/${id}`, task);
+            const response: AxiosResponse<ApiResponse<Task>> = await this.client.put(`/api/v1/tasks/${id}`, task);
             return response.data.data;
         } catch (error) {
             this.logger.error(`Failed to update task ${id}`, error);
@@ -160,7 +187,7 @@ export class ApiService implements IApiService {
 
     async deleteTask(id: string): Promise<void> {
         try {
-            await this.client.delete(`/api/tasks/${id}`);
+            await this.client.delete(`/api/v1/tasks/${id}`);
         } catch (error) {
             this.logger.error(`Failed to delete task ${id}`, error);
             throw error;
@@ -170,7 +197,7 @@ export class ApiService implements IApiService {
     // Functional Blocks
     async getFunctionalBlocks(): Promise<FunctionalBlock[]> {
         try {
-            const response: AxiosResponse<ApiResponse<FunctionalBlock[]>> = await this.client.get('/api/functional-blocks');
+            const response: AxiosResponse<ApiResponse<FunctionalBlock[]>> = await this.client.get('/api/v1/functional-blocks');
             return response.data.data;
         } catch (error) {
             this.logger.error('Failed to fetch functional blocks', error);
@@ -181,7 +208,7 @@ export class ApiService implements IApiService {
     // Documents
     async getDocuments(projectId?: string): Promise<Document[]> {
         try {
-            const url = projectId ? `/api/documents?project_id=${projectId}` : '/api/documents';
+            const url = projectId ? `/api/v1/documents?project_id=${projectId}` : '/api/v1/documents';
             const response: AxiosResponse<ApiResponse<Document[]>> = await this.client.get(url);
             return response.data.data;
         } catch (error) {
@@ -193,7 +220,7 @@ export class ApiService implements IApiService {
     // Development Plan
     async getPlan(projectId: string): Promise<PlanItem[]> {
         try {
-            const response: AxiosResponse<ApiResponse<PlanItem[]>> = await this.client.get(`/api/plan/${projectId}`);
+            const response: AxiosResponse<ApiResponse<PlanItem[]>> = await this.client.get(`/api/v1/projects/${projectId}/plan`);
             return response.data.data;
         } catch (error) {
             this.logger.error(`Failed to fetch plan for project ${projectId}`, error);
@@ -203,7 +230,7 @@ export class ApiService implements IApiService {
 
     async addTaskToPlan(projectId: string, taskId: string): Promise<PlanItem> {
         try {
-            const response: AxiosResponse<ApiResponse<PlanItem>> = await this.client.post(`/api/plan/${projectId}/tasks`, {
+            const response: AxiosResponse<ApiResponse<PlanItem>> = await this.client.post(`/api/v1/projects/${projectId}/plan/tasks/${taskId}`, {
                 task_id: taskId
             });
             return response.data.data;
@@ -215,7 +242,7 @@ export class ApiService implements IApiService {
 
     async removeTaskFromPlan(projectId: string, taskId: string): Promise<void> {
         try {
-            await this.client.delete(`/api/plan/${projectId}/tasks/${taskId}`);
+            await this.client.delete(`/api/v1/projects/${projectId}/plan/tasks/${taskId}`);
         } catch (error) {
             this.logger.error(`Failed to remove task ${taskId} from plan`, error);
             throw error;
@@ -224,7 +251,7 @@ export class ApiService implements IApiService {
 
     async reorderPlan(projectId: string, taskIds: string[]): Promise<void> {
         try {
-            await this.client.put(`/api/plan/${projectId}/reorder`, {
+            await this.client.put(`/api/v1/projects/${projectId}/plan/reorder`, {
                 task_ids: taskIds
             });
         } catch (error) {
@@ -236,7 +263,7 @@ export class ApiService implements IApiService {
     // Comments
     async getTaskComments(taskId: string): Promise<Comment[]> {
         try {
-            const response: AxiosResponse<ApiResponse<Comment[]>> = await this.client.get(`/api/tasks/${taskId}/comments`);
+            const response: AxiosResponse<ApiResponse<Comment[]>> = await this.client.get(`/api/v1/tasks/${taskId}/comments`);
             return response.data.data;
         } catch (error) {
             this.logger.error(`Failed to fetch comments for task ${taskId}`, error);
@@ -246,7 +273,7 @@ export class ApiService implements IApiService {
 
     async addTaskComment(taskId: string, content: string, author: string): Promise<Comment> {
         try {
-            const response: AxiosResponse<ApiResponse<Comment>> = await this.client.post(`/api/tasks/${taskId}/comments`, {
+            const response: AxiosResponse<ApiResponse<Comment>> = await this.client.post(`/api/v1/tasks/${taskId}/comments`, {
                 content,
                 author
             });
@@ -259,7 +286,7 @@ export class ApiService implements IApiService {
 
     async createComment(comment: Omit<Comment, 'id' | 'created_at' | 'updated_at'>): Promise<Comment> {
         try {
-            const response: AxiosResponse<ApiResponse<Comment>> = await this.client.post('/api/comments', comment);
+            const response: AxiosResponse<ApiResponse<Comment>> = await this.client.post('/api/v1/comments', comment);
             return response.data.data;
         } catch (error) {
             this.logger.error('Failed to create comment', error);
@@ -269,7 +296,7 @@ export class ApiService implements IApiService {
 
     async updateComment(commentId: string, updates: Partial<Comment>): Promise<Comment> {
         try {
-            const response: AxiosResponse<ApiResponse<Comment>> = await this.client.put(`/api/comments/${commentId}`, updates);
+            const response: AxiosResponse<ApiResponse<Comment>> = await this.client.put(`/api/v1/comments/${commentId}`, updates);
             return response.data.data;
         } catch (error) {
             this.logger.error(`Failed to update comment ${commentId}`, error);
@@ -279,7 +306,7 @@ export class ApiService implements IApiService {
 
     async deleteComment(commentId: string): Promise<void> {
         try {
-            await this.client.delete(`/api/comments/${commentId}`);
+            await this.client.delete(`/api/v1/comments/${commentId}`);
         } catch (error) {
             this.logger.error(`Failed to delete comment ${commentId}`, error);
             throw error;
@@ -288,7 +315,7 @@ export class ApiService implements IApiService {
 
     async updateProject(projectId: string, updates: Partial<Project>): Promise<Project> {
         try {
-            const response: AxiosResponse<ApiResponse<Project>> = await this.client.put(`/api/projects/${projectId}`, updates);
+            const response: AxiosResponse<ApiResponse<Project>> = await this.client.put(`/api/v1/projects/${projectId}`, updates);
             return response.data.data;
         } catch (error) {
             this.logger.error(`Failed to update project ${projectId}`, error);
@@ -298,7 +325,7 @@ export class ApiService implements IApiService {
 
     async deleteProject(projectId: string): Promise<void> {
         try {
-            await this.client.delete(`/api/projects/${projectId}`);
+            await this.client.delete(`/api/v1/projects/${projectId}`);
         } catch (error) {
             this.logger.error(`Failed to delete project ${projectId}`, error);
             throw error;
@@ -308,7 +335,7 @@ export class ApiService implements IApiService {
     // Health check
     async healthCheck(): Promise<boolean> {
         try {
-            await this.client.get('/api/health');
+            await this.client.get('/health');
             return true;
         } catch (error) {
             this.logger.error('Health check failed', error);

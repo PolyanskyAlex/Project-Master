@@ -147,6 +147,7 @@ cp .env.example .env
 - [🧪 Отчет по тестированию](frontend/TESTING_REPORT.md)
 - [🔌 VS Code Extension](vscode-extension/README.md)
 - [⚙️ API документация](backend/docs/API.md)
+- [🐛 Исправление CORS Policy Error](docs/BUGFIX_CORS_CACHE_CONTROL.md)
 
 ## 🚀 Команды развертывания
 

@@ -15,7 +15,7 @@ alwaysApply: false
     },
     {
       "name": "pipeline",
-      "description": "Проверь что pipeline из .cursor\rules\dev.mdc выполнен полностью, неукаснительно и дословно",
+      "description": "Проверь что pipeline из .cursor/rules/dev.mdc выполнен полностью, неукаснительно и дословно",
       "importance": "critical",
       "pattern": ".*",
       "category": "pipeline"
@@ -92,7 +92,7 @@ alwaysApply: false
     },
     {
       "name": "Technical documentation completeness",
-              "description": "Проверь, что создана/обновлена техническая документация согласно .cursor/rules/tech_docs.mdc. API документация, архитектурные схемы, инструкции по настройке должны быть актуальными.",
+      "description": "Проверь, что создана/обновлена техническая документация согласно .cursor/rules/tech_docs.mdc. API документация, архитектурные схемы, инструкции по настройке должны быть актуальными.",
       "importance": "high",
       "pattern": ".*",
       "category": "Documentation"

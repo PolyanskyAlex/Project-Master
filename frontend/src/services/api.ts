@@ -5,7 +5,7 @@ import { discoverBackendServer } from '../utils/serverDiscovery';
 
 // Конфигурация API
 let API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-const API_KEY = process.env.REACT_APP_API_KEY || 'dev-api-key-123';
+const API_KEY = process.env.REACT_APP_API_KEY || 'dev-api-key-12345';
 
 // Создание экземпляра axios с базовой инициализацией
 let apiClient: AxiosInstance = createApiClient(API_BASE_URL);

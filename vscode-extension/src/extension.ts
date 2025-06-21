@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     try {
         // Initialize services
-        const configService = new ConfigurationService();
+        const configService = new ConfigurationService(logger);
         const apiService = new ApiService(configService, logger);
         
         // Initialize caching if enabled
@@ -120,6 +120,12 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 logger.info('Loading initial data...');
                 
+                // Update API configuration with server discovery
+                await apiService.updateConfigurationWithDiscovery();
+                if (cachedApiService) {
+                    await cachedApiService.updateConfiguration();
+                }
+                
                 // Preload cache if enabled and configured
                 if (cachedApiService) {
                     const preloadOnStartup = vscode.workspace.getConfiguration('projectMaster.cache').get<boolean>('preloadOnStartup', true);
@@ -189,8 +195,14 @@ export function activate(context: vscode.ExtensionContext) {
             
             if (event.affectsConfiguration('projectMaster.apiUrl') || 
                 event.affectsConfiguration('projectMaster.apiKey')) {
-                logger.info('API configuration changed, updating services');
-                effectiveApiService.updateConfiguration();
+                logger.info('API configuration changed, updating services with discovery');
+                apiService.updateConfigurationWithDiscovery().then(() => {
+                    if (cachedApiService) {
+                        cachedApiService.updateConfiguration();
+                    }
+                }).catch(error => {
+                    logger.error('Failed to update configuration with discovery', error);
+                });
             }
         });
 
