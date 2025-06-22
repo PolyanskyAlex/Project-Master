@@ -132,10 +132,49 @@ docker exec projectmaster-db-1 pg_isready -U postgres
 - [ ] Frontend доступен через браузер
 - [ ] Database принимает соединения
 
+## Рецидив проблемы (2025-01-22)
+
+### Повторение ошибки
+Через короткое время после первоначального исправления проблема повторилась с идентичными симптомами:
+```
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.50/containers/[id]/json": 
+open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+```
+
+**Особенности рецидива:**
+- Docker Desktop процессы были запущены
+- Engine API все равно был недоступен
+- Требовался более радикальный подход
+
+### Окончательное решение рецидива
+**Полный перезапуск Docker Desktop:**
+```powershell
+# 1. Принудительная остановка всех процессов
+Get-Process | Where-Object {$_.Name -like "*docker*"} | Stop-Process -Force
+Stop-Service com.docker.service -Force
+
+# 2. Запуск с чистого листа
+Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+
+# 3. ВАЖНО: Достаточное ожидание инициализации 
+Start-Sleep -Seconds 45
+```
+
+### Результат окончательного исправления
+- ✅ Backend health check: корректный ответ
+- ✅ Frontend (порт 3000): HTTP 200 OK  
+- ✅ Database: `/var/run/postgresql:5432 - accepting connections`
+- ✅ Docker Engine API: полностью функционален
+- ✅ Контейнеры проекта: все запущены и стабильны
+
+### Урок из рецидива
+**Docker Desktop на Windows может быть нестабильным** - иногда процессы запущены, но Engine не инициализирован корректно. Решение: полный принудительный перезапуск с достаточным ожиданием.
+
 ## Примечания
 
 - Проблема была инфраструктурной, а не в коде приложения
-- Docker Desktop на Windows требует времени для полной инициализации
+- Docker Desktop на Windows требует времени для полной инициализации (45+ секунд)
+- **Рецидивы возможны** - создать процедуру полного перезапуска
 - Ошибка с extensions решилась автоматически при корректном запуске
 - Решение не требовало изменений в коде или конфигурации проекта
 

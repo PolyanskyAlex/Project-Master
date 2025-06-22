@@ -80,6 +80,20 @@
       "Database - принимает соединения",
       "Frontend (3000) - доступен"
     ],
-    "resolved_date": "2025-01-22"
-  }
+         "resolved_date": "2025-01-22"
+   },
+   "recurrence": {
+     "reopened_date": "2025-01-22",
+     "recurrence_reason": "Docker Desktop процессы запущены, но Engine API недоступен - неполная инициализация",
+     "new_symptoms": [
+       "Docker Desktop UI процессы работают",
+       "Engine API не отвечает на запросы",
+       "dev-start.bat не может получить образы postgres:15-alpine"
+     ],
+     "final_resolution": {
+       "solution": "Полный перезапуск Docker Desktop с принудительным завершением всех процессов",
+       "method": "Stop-Process -Force + Start-Process + ожидание 45 секунд полной инициализации",
+       "result": "Все сервисы успешно работают после перезапуска"
+     }
+   }
 } 
