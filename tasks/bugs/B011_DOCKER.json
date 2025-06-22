@@ -1,0 +1,85 @@
+{
+  "id": "B011_DOCKER",
+  "title": "Docker Desktop Engine Connection Failed - Critical Infrastructure Bug",
+  "description": "Критическая системная ошибка подключения к Docker Desktop Engine через именованный канал Windows, блокирующая запуск всех контейнеров проекта",
+  "priority": "CRITICAL",
+  "status": "RESOLVED",
+  "category": "INFRASTRUCTURE",
+  "functional_block": "DOCKER",
+  "created_date": "2025-01-22",
+  "error_details": {
+    "error_message": "error during connect: Get \"http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.50/containers/[container_id]/json\": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.",
+    "secondary_error": "Extensions Failed to fetch extensions - Docker Desktop startup failure",
+    "affected_services": ["backend", "frontend", "db"],
+    "environment": "Windows 10.0.26100, PowerShell 7, Docker 28.2.2",
+    "reproduction_frequency": "100% - постоянная ошибка"
+  },
+  "root_cause_analysis": {
+    "primary_hypothesis": "Docker Desktop не запущен или служба Docker Desktop недоступна",
+    "secondary_hypotheses": [
+      "Проблемы с правами доступа к именованным каналам Windows",
+      "Повреждение Docker Desktop установки",
+      "Конфликт с другими процессами, использующими Docker"
+    ],
+    "evidence": [
+      "docker info возвращает client информацию, но server error",
+      "Именованный канал dockerDesktopLinuxEngine недоступен",
+      "Ошибки повторяются для всех контейнеров проекта"
+    ]
+  },
+  "impact": {
+    "severity": "BLOCKER",
+    "business_impact": "Полная блокировка разработки и тестирования",
+    "technical_impact": [
+      "Невозможность запуска backend сервиса",
+      "Невозможность запуска frontend приложения", 
+      "Невозможность запуска базы данных",
+      "Блокировка всех Docker Compose операций"
+    ]
+  },
+  "diagnostic_steps": [
+    "Проверить статус Docker Desktop в системном трее",
+    "Проверить службы Windows связанные с Docker",
+    "Проверить существование именованного канала",
+    "Проверить логи Docker Desktop",
+    "Перезапустить Docker Desktop",
+    "При необходимости переустановить Docker Desktop"
+  ],
+  "fix_approach": {
+    "immediate_actions": [
+      "Диагностика состояния Docker Desktop",
+      "Перезапуск Docker Desktop сервисов",
+      "Проверка целостности установки"
+    ],
+    "verification_steps": [
+      "docker info должен возвращать информацию о сервере",
+      "docker-compose up должен успешно запускать контейнеры",
+      "Все сервисы проекта должны быть доступны"
+    ]
+  },
+  "related_files": [
+    "docker-compose.yml",
+    "docker-compose.prod.yml",
+    "dev-start.bat",
+    "dev-stop.bat"
+  ],
+  "assignee": "AI_AGENT",
+  "estimated_time": "30 minutes",
+  "resolution": {
+    "solution": "Docker Desktop не был запущен. Проблема решена запуском Docker Desktop приложения и ожиданием полной инициализации Engine.",
+    "steps_taken": [
+      "Диагностика: подтверждено что служба com.docker.service была остановлена",
+      "Запуск Docker Desktop через Start-Process",
+      "Ожидание инициализации Docker Engine (процессы запустились корректно)",
+      "Проблема с extensions решилась автоматически при повторном запуске"
+    ],
+    "verification_results": [
+      "docker info - успешно возвращает информацию о сервере",
+      "docker-compose ps - показывает работающие контейнеры",
+      "Backend (8080) - статус OK",
+      "Database - принимает соединения",
+      "Frontend (3000) - доступен"
+    ],
+    "resolved_date": "2025-01-22"
+  }
+} 
