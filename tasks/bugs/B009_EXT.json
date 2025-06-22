@@ -1,0 +1,50 @@
+{
+  "id": "B009_EXT",
+  "title": "Изменения в коде не применяются - расширение установлено как пакет",
+  "description": "Внесенные исправления не применяются потому что Cursor IDE загружает расширение из установленного пакета в .cursor/extensions вместо исходников разработки",
+  "type": "bug", 
+  "priority": "critical",
+  "status": "fixed",
+  "functional_block": "EXT",
+  "components": [
+    ".cursor/extensions/project-master.project-master-extension-0.4.1/",
+    "vscode-extension/",
+    "Cursor IDE Extension Loading"
+  ],
+  "root_cause": "Расширение установлено как пакет, а не загружается из исходников для разработки",
+  "symptoms": [
+    "command 'projectMaster.projectSelected' already exists (старая версия)",
+    "401 Unauthorized API errors (старая конфигурация)",
+    "Изменения в исходниках не влияют на работу расширения",
+    "Cursor загружает из c:\\Users\\user\\.cursor\\extensions\\"
+  ],
+  "impact": "Критический - невозможно тестировать исправления",
+  "reproduction_steps": [
+    "Внести изменения в vscode-extension/src/",
+    "Скомпилировать с npm run compile",
+    "Перезагрузить Cursor IDE",
+    "Ошибки остаются те же - изменения не применяются"
+  ],
+  "expected_behavior": "Cursor должен загружать расширение из исходников разработки",
+  "environment": {
+    "ide": "Cursor",
+    "extension_path": "c:\\Users\\user\\.cursor\\extensions\\project-master.project-master-extension-0.4.1\\",
+    "development_path": "D:\\Alex\\Soft Development2\\Product_Factory\\Project Master\\vscode-extension\\"
+  },
+  "fix_approach": [
+    "Удалить установленное расширение из .cursor/extensions",
+    "Загрузить расширение из исходников для разработки",
+    "Настроить Cursor для разработки расширений",
+    "Проверить что изменения применяются"
+  ],
+  "verification_criteria": [
+    "Расширение загружается из исходников разработки",
+    "Изменения в коде сразу влияют на работу",
+    "Ошибка дублирования команды исчезает",
+    "API ключ применяется корректно"
+  ],
+  "created_at": "2024-12-22T09:34:00Z",
+  "updated_at": "2024-12-22T09:34:00Z", 
+  "assigned_to": "system",
+  "estimated_effort": "20 минут"
+} 
