@@ -1,0 +1,44 @@
+{
+  "id": "B012_EXT",
+  "title": "API Authentication Mismatch - Extension vs Backend",
+  "description": "Extension configured with dev-api-key-12345 but backend uses test-api-key-12345, causing 401 Unauthorized errors",
+  "priority": "CRITICAL",
+  "status": "RESOLVED",
+  "category": "BUG",
+  "functional_block": "VSCode Extension",
+  "created_at": "2025-06-22T15:21:00Z",
+  "assignee": "AI Agent",
+  "reporter": "User",
+  "error_details": {
+    "http_status": 401,
+    "message": "Request failed with status code 401",
+    "endpoint": "/api/v1/tasks",
+    "method": "GET",
+    "base_url": "http://localhost:8080"
+  },
+  "root_cause": "API key mismatch between VSCode extension settings (dev-api-key-12345) and backend environment variable (test-api-key-12345)",
+  "affected_components": [
+    "VSCode Extension",
+    "Backend API",
+    "Task Loading",
+    "Project Loading"
+  ],
+  "reproduction_steps": [
+    "1. Configure extension API key to dev-api-key-12345",
+    "2. Try to load tasks in extension",
+    "3. Observe 401 Unauthorized error"
+  ],
+  "expected_result": "Extension should successfully load tasks and projects",
+  "actual_result": "401 Unauthorized errors prevent data loading",
+  "technical_details": {
+    "extension_api_key_default": "test-api-key-12345",
+    "extension_api_key_configured": "dev-api-key-12345", 
+    "backend_api_key": "test-api-key-12345",
+    "docker_env_source": "/.env file in project root"
+  },
+  "solution_approach": "Synchronize API keys between extension and backend by updating root .env file",
+  "files_to_modify": [
+    ".env",
+    "ConfigurationService.ts (default value update)"
+  ]
+} 

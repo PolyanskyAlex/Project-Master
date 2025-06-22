@@ -91,9 +91,10 @@
        "dev-start.bat не может получить образы postgres:15-alpine"
      ],
      "final_resolution": {
-       "solution": "Полный перезапуск Docker Desktop с принудительным завершением всех процессов",
-       "method": "Stop-Process -Force + Start-Process + ожидание 45 секунд полной инициализации",
-       "result": "Все сервисы успешно работают после перезапуска"
+       "solution": "Запуск Docker Desktop с административными правами для стабилизации именованного канала",
+       "method": "Stop-Process -Force + Start-Process -Verb RunAs + ожидание 90 секунд",
+       "result": "Кейс пользователя полностью воспроизведен и исправлен - dev-start.bat работает без ошибок",
+       "root_cause": "Docker Desktop на Windows нестабилен без административных прав - именованный канал dockerDesktopLinuxEngine недоступен"
      }
    }
 } 

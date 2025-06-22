@@ -34,7 +34,7 @@ alwaysApply: false
       {
         "step": 4,
         "name": "Тестирование",
-        "action": "Следуй правилам .cursor\rules\testing.mdc",
+        "action": "Следуй правилам .cursor\rules\testing.mdc, обязательно нужно воспроизвести кейс пользователя, если это возможно для агента технически.",
         "next": {
         "conditions": [
           {

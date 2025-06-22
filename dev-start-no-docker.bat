@@ -2,10 +2,11 @@
 chcp 65001 >nul
 echo ================================
 echo   PROJECT MASTER - DEV MODE
+echo   (NO DOCKER VERSION)
 echo ================================
 echo.
 
-echo [1/7] Checking prerequisites...
+echo [1/5] Checking prerequisites...
 go version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Go is not installed or not in PATH
@@ -18,16 +19,10 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-docker --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ERROR: Docker is not installed or not in PATH
-    exit /b 1
-)
-
-echo Go, Node.js and Docker are available
+echo Go and Node.js are available
 
 echo.
-echo [2/7] Stopping existing processes and freeing ports...
+echo [2/5] Stopping existing processes and freeing ports...
 tasklist | findstr /i "go.exe" >nul 2>&1
 if %errorlevel% equ 0 (
     echo Stopping existing Go processes...
@@ -53,19 +48,7 @@ for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":8080"') do (
 echo Previous processes and ports cleaned up
 
 echo.
-echo [3/7] Starting PostgreSQL...
-docker-compose up -d db
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to start PostgreSQL
-    exit /b 1
-)
-
-echo.
-echo [4/7] Waiting for database to be ready...
-timeout /t 5 /nobreak > nul
-
-echo.
-echo [5/7] Installing frontend dependencies...
+echo [3/5] Installing frontend dependencies...
 cd frontend
 if not exist node_modules (
     echo Installing npm packages...
@@ -86,7 +69,7 @@ echo PORT=3000 >> .env.local
 cd ..
 
 echo.
-echo [6/7] Starting Backend...
+echo [4/5] Starting Backend...
 cd backend
 if not exist .env (
     echo Creating backend .env file...
@@ -104,7 +87,7 @@ echo Backend starting...
 timeout /t 3 /nobreak > nul
 
 echo.
-echo [7/7] Starting Frontend...
+echo [5/5] Starting Frontend...
 cd frontend
 start /b "Frontend" cmd /c "npm start"
 cd ..
@@ -118,7 +101,7 @@ echo   DEV SERVICES STARTED
 echo ================================
 echo Backend:  http://localhost:8080
 echo Frontend: http://localhost:3000
-echo Database: localhost:5433 (Docker)
+echo Database: DOCKER REQUIRED - Please start Docker Desktop first
 echo.
 echo Opening development interface...
 start http://localhost:3000
@@ -127,4 +110,5 @@ echo.
 echo ================================
 echo Services are running in background.
 echo Use dev-stop.bat to stop all services.
+echo Start Docker Desktop and run dev-start.bat for full functionality.
 echo ================================ 
