@@ -1,13 +1,29 @@
 @echo off
 chcp 65001 >nul
-echo Restarting Frontend Server...
+echo ================================
+echo   RESTARTING FRONTEND SERVER
+echo ================================
+echo.
 
-echo Stopping current frontend...
-taskkill /f /im "node.exe" 2>nul
+echo [1/2] Stopping current frontend...
+tasklist | findstr /i "node.exe" >nul 2>&1
+if %errorlevel% equ 0 (
+    taskkill /f /im node.exe >nul 2>&1
+    echo ^> Frontend stopped
+) else (
+    echo ^> Frontend was not running
+)
 
 echo.
-echo Starting new frontend...
-start "Frontend Server" cmd /k "cd frontend && set BROWSER=none && npm start"
+echo [2/2] Starting new frontend...
+cd frontend
+set BROWSER=none
+echo ^> Starting React server in background...
+start /b npm start
+cd ..
 
-echo Frontend restarted!
-echo Frontend URL: http://localhost:3000 
+echo.
+echo ================================
+echo   FRONTEND RESTARTED
+echo ================================
+echo ^> Frontend URL: http://localhost:3000 

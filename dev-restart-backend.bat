@@ -1,18 +1,32 @@
 @echo off
 chcp 65001 >nul
-echo Restarting Backend Server...
+echo ================================
+echo   RESTARTING BACKEND SERVER
+echo ================================
+echo.
 
-echo Stopping current backend...
-taskkill /f /im "go.exe" 2>nul
+echo [1/2] Stopping current backend...
+tasklist | findstr /i "go.exe" >nul 2>&1
+if %errorlevel% equ 0 (
+    taskkill /f /im go.exe >nul 2>&1
+    echo ^> Backend stopped
+) else (
+    echo ^> Backend was not running
+)
 
 echo.
-echo Starting new backend in current terminal...
+echo [2/2] Starting new backend...
 cd backend
-copy ..\.env.local .env.local >nul 2>&1
-echo Backend configuration updated from .env.local
-echo.
-echo Starting Go server...
-go run main.go
+if not exist .env (
+    copy ..\\.env.local .env >nul 2>&1
+    echo ^> Backend configuration updated from .env.local
+)
+echo ^> Starting Go server in background...
+start /b go run main.go
+cd ..
 
-echo Backend restarted!
-echo Backend URL: http://localhost:8080 
+echo.
+echo ================================
+echo   BACKEND RESTARTED
+echo ================================
+echo ^> Backend URL: http://localhost:8080 

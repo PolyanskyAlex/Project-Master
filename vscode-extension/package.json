@@ -2,7 +2,7 @@
   "name": "project-master-extension",
   "displayName": "Project Master",
   "description": "VS Code extension for Project Master - AI-driven project management system with enhanced Tree View navigation",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "publisher": "project-master",
   "engines": {
     "vscode": "^1.96.0"
@@ -646,7 +646,7 @@
         },
         "projectMaster.apiKey": {
           "type": "string",
-          "default": "test-api-key-12345",
+                          "default": "dev-api-key-12345",
           "description": "Project Master API Key"
         },
         "projectMaster.webUrl": {

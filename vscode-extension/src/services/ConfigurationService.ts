@@ -22,7 +22,7 @@ export class ConfigurationService {
     getConfig(): ExtensionConfig {
         return {
             apiUrl: this.config.get<string>('apiUrl', 'http://localhost:8080'),
-            apiKey: this.config.get<string>('apiKey', 'test-api-key-12345'),
+            apiKey: this.config.get<string>('apiKey', 'dev-api-key-12345'),
             webUrl: this.config.get<string>('webUrl', 'http://localhost:3000'),
             autoRefresh: this.config.get<boolean>('autoRefresh', true),
             refreshInterval: this.config.get<number>('refreshInterval', 30000),
@@ -47,7 +47,7 @@ export class ConfigurationService {
     }
 
     getApiKey(): string {
-        return this.config.get<string>('apiKey', 'test-api-key-12345');
+        return this.config.get<string>('apiKey', 'dev-api-key-12345');
     }
 
     getWebUrl(): string {

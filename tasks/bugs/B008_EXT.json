@@ -9,9 +9,11 @@
   "components": [
     "vscode-extension/src/extension.ts",
     "vscode-extension/src/providers/PlanProvider.ts",
+    "vscode-extension/src/services/ConfigurationService.ts",
+    "vscode-extension/package.json",
     "backend API authorization"
   ],
-  "root_cause": "Команда projectMaster.projectSelected регистрируется дважды + неправильная авторизация API",
+  "root_cause": "Несоответствие API ключей: расширение отправляло 'test-api-key-12345', а backend ожидал 'dev-api-key-12345'",
   "symptoms": [
     "command 'projectMaster.projectSelected' already exists",
     "401 Unauthorized для API запросов",
@@ -28,24 +30,25 @@
   "expected_behavior": "Расширение должно активироваться без ошибок и успешно загружать данные из API",
   "environment": {
     "ide": "Cursor",
-    "extension_version": "0.4.1",
+    "extension_version": "0.4.2",
     "backend_status": "работает (порт 8080)",
-    "api_key": "требует проверки"
+    "api_key": "dev-api-key-12345"
   },
-  "fix_approach": [
-    "Найти и удалить дублирующую регистрацию команды projectMaster.projectSelected",
-    "Проверить конфигурацию API ключа в расширении",
-    "Проверить правильность передачи X-API-Key заголовка",
-    "Тестировать активацию расширения"
+  "fixes_applied": [
+    "Исправлен API ключ в ConfigurationService.ts: test-api-key-12345 -> dev-api-key-12345",
+    "Исправлен дефолтный API ключ в package.json",
+    "Удалена дублирующая регистрация команды projectMaster.projectSelected",
+    "Создан новый VSIX пакет версии 0.4.2"
   ],
-  "verification_criteria": [
-    "Расширение активируется без ошибок дублирования команд",
-    "API запросы возвращают 200 OK вместо 401",
-    "Проекты загружаются успешно",
-    "Команда projectMaster.refreshProjects доступна"
+  "verification_steps": [
+    "Установить project-master-extension-0.4.2.vsix",
+    "Перезагрузить окно IDE",
+    "Проверить активацию расширения без ошибок",
+    "Проверить загрузку проектов (должно быть 200 OK вместо 401)"
   ],
   "created_at": "2024-12-22T09:18:00Z",
-  "updated_at": "2024-12-22T09:18:00Z",
+  "updated_at": "2025-06-22T13:10:00Z",
   "assigned_to": "system",
-  "estimated_effort": "30 минут"
+  "estimated_effort": "30 минут",
+  "actual_effort": "45 минут"
 } 
