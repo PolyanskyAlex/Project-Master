@@ -99,6 +99,9 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
         console.log('=== PROJECT MASTER: REFRESH PROJECTS COMMAND EXECUTED ===');
         logger.info('Refresh projects command called');
         
+        // Verify command registration
+        console.log('Command refreshProjects is executing. Registration successful.');
+        
         try {
             console.log('Starting projects refresh...');
             logger.info('Refreshing projects...');

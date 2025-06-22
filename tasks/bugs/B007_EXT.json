@@ -1,0 +1,53 @@
+{
+  "id": "B007_EXT",
+  "title": "Команда projectMaster.refreshProjects не найдена после восстановления backend",
+  "description": "После восстановления backend API расширение Project Master в Cursor IDE не может найти команду 'projectMaster.refreshProjects'. Ошибка 'command not found' указывает на проблемы с активацией или регистрацией команд расширения.",
+  "type": "bug",
+  "priority": "high",
+  "status": "fixed",
+  "functional_block": "EXT",
+  "components": [
+    "vscode-extension/src/extension.ts",
+    "vscode-extension/src/commands/index.ts",
+    "vscode-extension/package.json"
+  ],
+  "root_cause": "Расширение не активировалось корректно после восстановления backend API или требует перезагрузки",
+  "symptoms": [
+    "Failed to load projects. Please check your API configuration",
+    "Error running command projectMaster.refreshProjects: command not found",
+    "Команды расширения недоступны в Command Palette"
+  ],
+  "impact": "Критический - полная неработоспособность основного функционала расширения",
+  "reproduction_steps": [
+    "Открыть Cursor IDE после восстановления backend",
+    "Попытаться выполнить команду projectMaster.refreshProjects",
+    "Получить ошибку 'command not found'"
+  ],
+  "expected_behavior": "Команда должна выполняться и обновлять список проектов в Tree View",
+  "environment": {
+    "os": "Windows 10",
+    "ide": "Cursor",
+    "extension_version": "0.4.1",
+    "backend_status": "работает (порт 8080)",
+    "api_available": true
+  },
+  "fix_approach": [
+    "Перезагрузить окно Cursor IDE",
+    "Проверить логи активации расширения",
+    "Убедиться что backend API доступен",
+    "Проверить регистрацию команд",
+    "Добавить дополнительное логирование активации"
+  ],
+  "verification_criteria": [
+    "Команда projectMaster.refreshProjects выполняется успешно",
+    "Проекты загружаются и отображаются в Tree View",
+    "Все команды расширения доступны в Command Palette",
+    "API health check возвращает успешный ответ",
+    "Логи показывают успешную активацию расширения"
+  ],
+  "created_at": "2024-12-22T09:12:00Z",
+  "updated_at": "2024-12-22T09:12:00Z",
+  "assigned_to": "system",
+  "estimated_effort": "15 минут",
+  "related_issues": ["B005_EXT", "B006_EXT"]
+} 

@@ -13,10 +13,14 @@ import { SetupCommands } from './commands/setup';
 
 export function activate(context: vscode.ExtensionContext) {
     const logger = new Logger();
-    logger.info('Project Master extension is being activated...');
-    console.log('=== Project Master: activate() called ===');
-    console.log('Extension activation event triggered');
-    console.log('Context subscriptions before activation:', context.subscriptions.length);
+            logger.info('Project Master extension is being activated...');
+        console.log('=== Project Master: activate() called ===');
+        console.log('Extension activation event triggered');
+        console.log('Context subscriptions before activation:', context.subscriptions.length);
+        
+        // Log environment info for debugging
+        console.log('Workspace folder:', vscode.workspace.workspaceFolders?.[0]?.uri.fsPath);
+        console.log('VSCode version:', vscode.version);
 
     try {
         // Initialize services
@@ -94,6 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
             planProvider
         });
         console.log('=== Project Master: registerCommands() called ===');
+        logger.info('Commands registered successfully');
 
         // Register setup commands
         const setupCommands = new SetupCommands(configService, effectiveApiService as any, logger);
