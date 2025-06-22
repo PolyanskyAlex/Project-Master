@@ -84,6 +84,10 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Listen for project selection changes
         vscode.commands.registerCommand('projectMaster.projectSelected', (project) => {
+            // Update all providers with selected project
+            projectsProvider.selectProject(project);
+            tasksProvider.setSelectedProject(project);
+            planProvider.setSelectedProject(project);
             updateTreeViewTitles();
         });
 

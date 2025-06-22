@@ -16,10 +16,8 @@ export class TasksProvider implements vscode.TreeDataProvider<TaskTreeItem> {
         private apiService: ApiService,
         private logger: Logger
     ) {
-        // Listen for project selection events
-        vscode.commands.registerCommand('projectMaster.projectSelected', (project: Project) => {
-            this.setSelectedProject(project);
-        });
+        // Note: projectMaster.projectSelected command is registered in extension.ts
+        // This provider listens for project selection events via setSelectedProject method
     }
 
     refresh(): void {
