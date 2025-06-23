@@ -96,5 +96,22 @@
        "result": "Кейс пользователя полностью воспроизведен и исправлен - dev-start.bat работает без ошибок",
        "root_cause": "Docker Desktop на Windows нестабилен без административных прав - именованный канал dockerDesktopLinuxEngine недоступен"
      }
+   },
+   "second_recurrence": {
+     "reopened_date": "2025-06-23",
+     "symptoms": "Те же ошибки dockerDesktopLinuxEngine после периода простоя системы",
+     "applied_solution": "Повторное применение проверенного решения: Stop-Process -Force + Start-Process -Verb RunAs",
+     "results": {
+       "docker_engine_status": "WORKING - Server Version 28.2.2",
+       "containers_status": "4 running, 1 stopped",
+       "project_services": {
+         "postgresql": "✅ Container projectmaster-db-1 Running",
+         "backend": "✅ Connected to database, migrations applied",
+         "frontend": "✅ Available on localhost:3000"
+       }
+     },
+     "final_status": "RESOLVED",
+     "resolution_time": "5 minutes",
+     "confirmed_solution": "Радикальный перезапуск Docker Desktop с административными правами решает проблему стабильно"
    }
 } 
