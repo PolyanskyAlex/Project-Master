@@ -83,12 +83,18 @@ export function activate(context: vscode.ExtensionContext) {
         };
 
         // Listen for project selection changes
-        vscode.commands.registerCommand('projectMaster.projectSelected', (project) => {
-            // Update all providers with selected project
-            projectsProvider.selectProject(project);
-            tasksProvider.setSelectedProject(project);
-            planProvider.setSelectedProject(project);
-            updateTreeViewTitles();
+        vscode.commands.registerCommand('projectMaster.projectSelected', (projectId: string) => {
+            // Fix: Get project object by ID to prevent circular reference issues
+            const project = projectsProvider.getProjectById(projectId);
+            if (project) {
+                // Update all providers with selected project
+                projectsProvider.selectProject(project);
+                tasksProvider.setSelectedProject(project);
+                planProvider.setSelectedProject(project);
+                updateTreeViewTitles();
+            } else {
+                logger.warn(`Project with ID ${projectId} not found`);
+            }
         });
 
         // Register commands

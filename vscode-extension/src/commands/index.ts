@@ -58,9 +58,19 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
     planPushCommands.registerCommands();
 
     // Core navigation and selection commands
-    const selectProjectCommand = vscode.commands.registerCommand('projectMaster.selectProject', async (project: Project) => {
+    const selectProjectCommand = vscode.commands.registerCommand('projectMaster.selectProject', async (projectOrId: Project | string) => {
         console.log('=== Project Master: selectProjectCommand registered ===');
         try {
+            // Fix: Handle both project object and project ID to prevent circular reference issues
+            const project = typeof projectOrId === 'string' 
+                ? projectsProvider.getProjectById(projectOrId)
+                : projectOrId;
+                
+            if (!project || !project.id) {
+                vscode.window.showWarningMessage('Invalid project selected');
+                return;
+            }
+            
             logger.info(`Selecting project: ${project.name}`);
             
             // Update all providers with selected project

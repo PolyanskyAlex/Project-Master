@@ -21,13 +21,31 @@ export class ProjectCommands {
         // Edit project command
         const editProjectCommand = vscode.commands.registerCommand(
             'projectMaster.projects.edit',
-            (project: Project) => this.editProject(project)
+            (projectOrId: Project | string) => {
+                const project = typeof projectOrId === 'string' 
+                    ? this.projectsProvider.getProjectById(projectOrId)
+                    : projectOrId;
+                if (project) {
+                    this.editProject(project);
+                } else {
+                    this.logger.warn(`Project not found: ${projectOrId}`);
+                }
+            }
         );
 
         // Delete project command
         const deleteProjectCommand = vscode.commands.registerCommand(
             'projectMaster.projects.delete',
-            (project: Project) => this.deleteProject(project)
+            (projectOrId: Project | string) => {
+                const project = typeof projectOrId === 'string' 
+                    ? this.projectsProvider.getProjectById(projectOrId)
+                    : projectOrId;
+                if (project) {
+                    this.deleteProject(project);
+                } else {
+                    this.logger.warn(`Project not found: ${projectOrId}`);
+                }
+            }
         );
 
         // Duplicate project command

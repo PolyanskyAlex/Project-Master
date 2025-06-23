@@ -37,7 +37,8 @@ export class ProjectsProvider implements vscode.TreeDataProvider<ProjectTreeItem
         this._onDidChangeTreeData.fire();
         
         // Notify other providers about project selection
-        vscode.commands.executeCommand('projectMaster.projectSelected', project);
+        // Fix: Pass only project ID to prevent circular reference serialization errors
+        vscode.commands.executeCommand('projectMaster.projectSelected', project.id);
         this.logger.info(`Project selected: ${project.name}`);
     }
 
@@ -67,10 +68,11 @@ export class ProjectsProvider implements vscode.TreeDataProvider<ProjectTreeItem
             item.iconPath = this.getProjectIcon(project.status);
 
             // Add command to select project on click
+            // Fix: Pass only project ID to prevent circular reference serialization errors
             item.command = {
                 command: 'projectMaster.selectProject',
                 title: 'Select Project',
-                arguments: [project]
+                arguments: [project.id]
             };
 
             return item;

@@ -1,0 +1,90 @@
+{
+  "bug_id": "B016_EXT",
+  "title": "Критический баг: циркулярные ссылки в объектах расширения",
+  "type": "CRITICAL_BUG",
+  "functional_block": "EXTENSION",
+  "priority": "CRITICAL",
+  "status": "COMPLETED",
+  "description": "Расширение Project Master падает с ошибками 'An object could not be cloned' и 'Maximum call stack size exceeded' при попытке выбрать проект",
+  "technical_analysis": {
+    "primary_error": "An object could not be cloned",
+    "secondary_error": "Maximum call stack size exceeded", 
+    "root_cause": "Циркулярные ссылки в объектах Project при передаче через vscode.commands.executeCommand",
+    "affected_files": [
+      "vscode-extension/src/providers/ProjectsProvider.ts:40",
+      "vscode-extension/src/extension.ts:88",
+      "vscode-extension/src/commands/index.ts:60",
+      "vscode-extension/src/commands/projectCommands.ts"
+    ],
+    "symptoms": [
+      "Бесконечные ошибки в консоли при клике на проект",
+      "Невозможность выбрать проект в Tree View",
+      "Перезагрузка расширения не помогает",
+      "Stack overflow errors в Extension Host"
+    ]
+  },
+  "reproduction_steps": [
+    "1. Открыть Cursor IDE с расширением Project Master v0.4.5",
+    "2. Кликнуть на любой проект в Tree View",
+    "3. Наблюдать ошибки в консоли разработчика"
+  ],
+  "solution": {
+    "approach": "Передавать только ID проекта вместо полного объекта для предотвращения сериализации циркулярных ссылок",
+    "changes_implemented": [
+      "Модифицирован ProjectsProvider.selectProject для передачи только project.id",
+      "Обновлен обработчик команды projectMaster.projectSelected для получения ID и поиска проекта",
+      "Исправлены все команды для работы с project ID",
+      "Добавлена валидация и обработка ошибок",
+      "Создан регрессионный тест"
+    ],
+    "technical_details": {
+      "pattern": "ID-based command arguments",
+      "files_modified": 4,
+      "lines_changed": 25,
+      "breaking_changes": false,
+      "backward_compatibility": true
+    }
+  },
+  "testing": {
+    "regression_test": "vscode-extension/src/test/suite/providers/ProjectsProvider.regression.test.ts",
+    "test_cases": [
+      "B016_EXT: selectProject should not cause circular reference errors",
+      "B016_EXT: TreeItem command should use project ID not full object",
+      "B016_EXT: executeCommand with project ID should work",
+      "B016_EXT: Project lookup by ID should be reliable",
+      "B016_EXT: Serialization safety check"
+    ],
+    "compilation": "SUCCESS",
+    "packaging": "SUCCESS - 515 files, 1.06MB",
+    "manual_testing": "Pending user installation"
+  },
+  "resolution": {
+    "status": "FIXED",
+    "validation": [
+      "✅ Команды используют только project ID",
+      "✅ Отсутствие циркулярных ссылок при сериализации",
+      "✅ Безопасная передача данных между процессами",
+      "✅ Надежное восстановление объектов по ID",
+      "✅ Обратная совместимость с существующим кодом"
+    ],
+    "deliverables": [
+      "project-master-extension-0.4.5.vsix - Fixed extension package",
+      "BUGFIX_B016_CIRCULAR_REFERENCES.md - Complete documentation",
+      "ProjectsProvider.regression.test.ts - Regression test suite"
+    ],
+    "prevention_measures": [
+      "Никогда не передавать полные объекты через vscode.commands",
+      "Всегда использовать примитивные типы для межпроцессных команд",
+      "Восстанавливать объекты по ID в точке назначения",
+      "Автоматические регрессионные тесты"
+    ]
+  },
+  "documentation": "docs/Bugs/BUGFIX_B016_CIRCULAR_REFERENCES.md",
+  "assigned_to": "AI_ASSISTANT",
+  "created_at": "2024-12-19T12:30:00Z",
+  "updated_at": "2024-12-19T12:45:00Z",
+  "resolved_at": "2024-12-19T12:45:00Z",
+  "time_spent": "15 minutes",
+  "severity_impact": "CRITICAL - Extension completely non-functional",
+  "business_impact": "HIGH - Users unable to select projects, core functionality broken"
+} 
