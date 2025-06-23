@@ -343,7 +343,7 @@ alwaysApply: true
   },
 
   "developmentRules": {
-    "priority": 5,
+    "priority": 0,
     "conditions": {
       "trigger_phrases": [
         "выполни задачу разработки",

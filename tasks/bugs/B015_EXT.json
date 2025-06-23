@@ -113,12 +113,188 @@
     "deliverables": [
       "Исправленный ApiService.ts",
       "VSIX пакет project-master-extension-0.4.5.vsix",
-      "Документация бага B015_EXT.json"
+      "Документация бага B015_EXT.json",
+      "Техническая документация TECH_API_SERVICE_INTEGRATION.md"
     ],
     "next_steps": [
       "Установить новый VSIX пакет в Cursor IDE",
       "Перезагрузить расширение",
       "Проверить отображение проектов и задач в Tree View"
+    ]
+  },
+
+  "bug_report": {
+    "title": "Отчет об анализе ошибки: Extension API Service неправильно парсит ответы backend API",
+    
+    "summary": {
+      "description": "Расширение Project Master не отображает проекты и задачи в Tree View из-за неправильного парсинга API ответов",
+      "root_causes": [
+        "ApiService ожидал обёртку ApiResponse<T[]>, но backend возвращает массивы напрямую",
+        "Попытка доступа к response.data.data вместо response.data возвращала undefined"
+      ],
+      "affected_modules": [
+        "vscode-extension/src/services/ApiService.ts",
+        "vscode-extension/src/services/CacheService.ts",
+        "Tree View providers"
+      ]
+    },
+
+    "error_description": {
+      "observed_behavior": "Расширение не отображает проекты и задачи в Tree View панели",
+      "expected_behavior": "Расширение должно отображать список проектов и задач из backend API",
+      "reproduction_steps": [
+        "1. Запустить backend API (docker-compose up -d)",
+        "2. Установить расширение Project Master v0.4.4",
+        "3. Открыть Tree View расширения",
+        "4. Наблюдать пустые панели проектов и задач"
+      ],
+      "environment": {
+        "extension_version": "0.4.4",
+        "ide": "Cursor IDE",
+        "backend": "Project Master API v1",
+        "os": "Windows 10"
+      },
+      "error_messages": [
+        "[WARN] API returned non-array functional blocks data:",
+        "[WARN] API returned non-array projects data:"
+      ]
+    },
+
+    "execution_path_analysis": {
+      "entry_points": [
+        "Extension activation → Tree View providers → CachedApiService → ApiService"
+      ],
+      "initial_state": "Backend API запущен и возвращает корректные данные",
+      "key_components": [
+        {
+          "component": "ApiService",
+          "responsibility": "HTTP запросы к backend API",
+          "role": "Получение данных проектов, задач, функциональных блоков"
+        },
+        {
+          "component": "CacheService", 
+          "responsibility": "Кэширование API ответов",
+          "role": "Проверка типов данных перед кэшированием"
+        },
+        {
+          "component": "Tree View Providers",
+          "responsibility": "Отображение данных в UI",
+          "role": "Рендеринг проектов и задач в панели"
+        }
+      ],
+      "execution_trace": [
+        {
+          "step": 1,
+          "action": "Extension activation → ProjectsProvider.getChildren()",
+          "input": "Запрос списка проектов",
+          "expected": "Получение массива проектов",
+          "actual": "Получение undefined из-за неправильного парсинга"
+        },
+        {
+          "step": 2,
+          "action": "CachedApiService.getProjects() → ApiService.getProjects()",
+          "input": "HTTP GET /api/v1/projects",
+          "expected": "Возврат Project[] массива",
+          "actual": "response.data.data возвращает undefined"
+        },
+        {
+          "step": 3,
+          "action": "CacheService.cacheProjects(undefined)",
+          "input": "undefined вместо Project[]",
+          "expected": "Кэширование массива проектов",
+          "actual": "Предупреждение 'API returned non-array data'"
+        },
+        {
+          "step": 4,
+          "action": "Tree View отображение",
+          "input": "undefined/null данные",
+          "expected": "Список проектов в UI",
+          "actual": "Пустая панель проектов"
+        }
+      ],
+      "data_flow": {
+        "expected": "Backend API → Project[] → Cache → Tree View",
+        "actual": "Backend API → Project[] → undefined → Cache warning → Empty Tree View"
+      }
+    },
+
+    "potential_root_causes": [
+      {
+        "hypothesis": "Неправильные типы ответов в ApiService",
+        "evidence": [
+          "ApiService использует AxiosResponse<ApiResponse<Project[]>>",
+          "Backend возвращает массивы напрямую, не в обёртке",
+          "curl тесты показывают прямые массивы в ответах"
+        ],
+        "code_evidence": "async getProjects(): Promise<Project[]> {\n  const response: AxiosResponse<ApiResponse<Project[]>> = await this.client.get('/api/v1/projects');\n  return response.data.data; // undefined!\n}",
+        "mechanism": "response.data содержит Project[], но код пытается получить response.data.data"
+      },
+      {
+        "hypothesis": "Несоответствие API контракта между frontend и backend",
+        "evidence": [
+          "Frontend ожидает обёртку ApiResponse<T>",
+          "Backend возвращает данные напрямую",
+          "Web UI работает корректно (использует правильный формат)"
+        ],
+        "mechanism": "Разные предположения о формате API ответов"
+      }
+    ],
+
+    "most_likely_cause": "Неправильные типы ответов в ApiService - код ожидает обёртку ApiResponse<T[]>, но API возвращает массивы напрямую",
+
+    "code_evidence": {
+      "problematic_files": [
+        "vscode-extension/src/services/ApiService.ts:119-127 (getProjects)",
+        "vscode-extension/src/services/ApiService.ts:139-147 (getTasks)", 
+        "vscode-extension/src/services/ApiService.ts:221-229 (getFunctionalBlocks)"
+      ],
+      "backend_verification": "curl -H 'X-API-Key: dev-api-key-12345' http://localhost:8080/api/v1/projects возвращает [Project] напрямую"
+    },
+
+    "debugging_recommendations": {
+      "logging": [
+        "Добавить debug логирование в ApiService: console.log('API Response:', response.data)",
+        "Логировать тип данных: console.log('Data type:', typeof response.data, Array.isArray(response.data))",
+        "CacheService: логировать входные данные перед кэшированием"
+      ],
+      "breakpoints": [
+        "ApiService.getProjects() на строке return response.data.data",
+        "CacheService.cacheProjects() на входе метода",
+        "ProjectsProvider.getChildren() для проверки получаемых данных"
+      ],
+      "test_scenarios": [
+        "Прямой curl запрос к API для проверки формата ответа",
+        "Тестирование с минимальным набором данных",
+        "Проверка других endpoints (tasks, functional-blocks)"
+      ],
+      "clarifying_questions": [
+        "Изменялся ли формат API ответов в последних версиях backend?",
+        "Используют ли другие клиенты (web UI) такой же формат запросов?"
+      ]
+    },
+
+    "impact_assessment": {
+      "severity": "CRITICAL",
+      "consequences": [
+        "Полная нефункциональность расширения",
+        "Невозможность управления проектами через IDE",
+        "Снижение продуктивности разработчиков",
+        "Необходимость использования web интерфейса вместо расширения"
+      ]
+    },
+
+    "assumptions": [
+      "Backend API работает корректно и возвращает данные",
+      "Сетевое соединение между расширением и backend установлено",
+      "API ключи настроены правильно",
+      "Web UI использует тот же API, но с правильным парсингом"
+    ],
+
+    "open_questions": [
+      "Когда изменился формат API ответов (если изменился)?",
+      "Почему web UI работает корректно с тем же API?",
+      "Есть ли документация по API контракту?",
+      "Планируется ли изменение формата API в будущем?"
     ]
   },
   
