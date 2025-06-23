@@ -136,11 +136,19 @@ export class CachedApiService implements IApiService {
 
         try {
             const tasks = await this.apiService.getTasks(projectId);
-            this.cacheService.cacheTasks(tasks, projectId);
-            return tasks;
+            
+            // Проверка и валидация полученных данных
+            if (Array.isArray(tasks)) {
+                this.cacheService.cacheTasks(tasks, projectId);
+                return tasks;
+            } else {
+                this.logger.warn('API returned non-array tasks data:', tasks);
+                return []; // Возвращаем пустой массив вместо undefined
+            }
         } catch (error) {
             this.logger.error('Failed to fetch tasks', error);
-            throw error;
+            // Возвращаем пустой массив вместо выброса ошибки для лучшего UX
+            return [];
         }
     }
 

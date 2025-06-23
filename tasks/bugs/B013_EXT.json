@@ -1,0 +1,56 @@
+{
+  "id": "B013_EXT",
+  "title": "CacheService TypeError - Cannot read properties of undefined (reading 'length')",
+  "type": "bug",
+  "priority": "CRITICAL",
+  "status": "IN_PROGRESS",
+  "functional_block": "EXT",
+  "description": "Расширение Project Master Extension не загружает проекты из-за ошибки TypeError в методе CacheService.estimateMemoryUsage(). Ошибка возникает при попытке обращения к свойству length объекта item.data, который может быть undefined или null.",
+  "error_details": {
+    "error_message": "TypeError: Cannot read properties of undefined (reading 'length')",
+    "stack_trace": "CacheService.estimateMemoryUsage (line 450) → CacheService.updateStats (line 429) → CacheService.set (line 108) → CacheService.cacheTasks (line 188) → CachedApiService.getTasks (line 139) → TasksProvider.loadTasks (line 67)",
+    "affected_files": [
+      "vscode-extension/src/services/CacheService.ts",
+      "vscode-extension/src/services/CachedApiService.ts",
+      "vscode-extension/src/providers/TasksProvider.ts"
+    ],
+    "error_location": "CacheService.ts:450"
+  },
+  "impact": {
+    "severity": "CRITICAL",
+    "affected_functionality": [
+      "Загрузка проектов в расширении",
+      "Отображение задач",
+      "Кэширование данных",
+      "Основной функционал расширения"
+    ],
+    "user_impact": "Полная неработоспособность расширения Project Master Extension"
+  },
+  "root_cause": "Метод estimateMemoryUsage() не проверяет item.data на undefined/null перед вызовом JSON.stringify().length",
+  "reproduction_steps": [
+    "1. Запустить VSCode с установленным расширением Project Master",
+    "2. Попытаться загрузить проекты в расширении",
+    "3. Наблюдать ошибку в консоли Extension Host"
+  ],
+  "expected_behavior": "Расширение должно успешно загружать и отображать проекты без ошибок в кэше",
+  "solution_approach": {
+    "primary_fix": "Добавить проверку на undefined/null в метод estimateMemoryUsage()",
+    "additional_fixes": [
+      "Добавить валидацию входных данных в методы кэширования",
+      "Улучшить обработку ошибок API",
+      "Добавить регрессионные тесты"
+    ]
+  },
+  "testing_requirements": [
+    "Протестировать с недоступным API backend",
+    "Протестировать с пустым ответом от API", 
+    "Протестировать кэширование undefined и null значений",
+    "Проверить работу расширения после исправления"
+  ],
+  "analysis_report": "docs/BUGFIX_CACHE_ESTIMATE_MEMORY.md",
+  "created_at": "2025-01-22T15:38:00Z",
+  "updated_at": "2025-01-22T15:38:00Z",
+  "assignee": "AI-Assistant",
+  "estimated_effort": "2 hours",
+  "tags": ["extension", "cache", "typescript", "error-handling"]
+} 

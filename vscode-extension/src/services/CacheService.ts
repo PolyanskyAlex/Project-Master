@@ -447,7 +447,20 @@ export class CacheService {
         
         for (const [key, item] of this.cache.entries()) {
             totalSize += key.length * 2; // UTF-16
-            totalSize += JSON.stringify(item.data).length * 2;
+            
+            // Безопасная обработка item.data для предотвращения TypeError
+            try {
+                if (item.data !== undefined && item.data !== null) {
+                    totalSize += JSON.stringify(item.data).length * 2;
+                } else {
+                    totalSize += 16; // Размер для null/undefined (8 байт + запас)
+                }
+            } catch (error) {
+                // Если JSON.stringify не может обработать данные, используем примерный размер
+                totalSize += 32;
+                this.logger.warn(`Failed to stringify cache item data for key: ${key}`, error);
+            }
+            
             totalSize += 32; // Метаданные (timestamp, ttl, etc.)
         }
         
