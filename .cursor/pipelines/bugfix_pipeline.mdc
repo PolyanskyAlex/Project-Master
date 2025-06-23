@@ -11,7 +11,7 @@ alwaysApply: false
     "steps": [
       {
         "step": 1,
-        "name": "Анализ и отчет",
+        "name": "Анализ",
         "action": "Проанализируй проблему в соответствии с правилами .cursor\rules\prompt_analyzeBug.mdc",
         "next": 2
       },
@@ -58,9 +58,13 @@ alwaysApply: false
       },
       {
         "step": 6,
-        "name": "Документация",
-        "action": "Агент ОБЯЗАН обновлять ВСЮ документацию, в том числе в docs\, указанную в правилах, после успешного тестирования **СОГЛАСНО .cursor\rules\tech_docs.mdc и .cursor\rules\user_docs.mdc**"
+        "name": "Документация"[
+            "Агент ОБЯЗАН обновить файл задачи и сформировать внутри него отчет в соответствии с правилами `.cursor\output_formats\bug_report.mdc`"
+            "Агент ОБЯЗАН обновлять ВСЮ техническую и пользовательскую документацию в `docs\`, СОГЛАСНО правилам `.cursor\rules\tech_docs.mdc` и `.cursor\rules\user_docs.mdc`",
+            
+        ]
       }
+
 
 
     ]
