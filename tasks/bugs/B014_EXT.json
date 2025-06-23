@@ -1,0 +1,68 @@
+{
+    "id": "B014_EXT",
+    "title": "CacheService forEach TypeError на undefined значениях",
+    "description": "Критическая ошибка в CacheService - методы cacheProjects и cacheFunctionalBlocks пытаются вызвать forEach на undefined значениях",
+    "severity": "critical", 
+    "status": "fixed",
+    "category": "Extension",
+    "created_date": "2025-01-23",
+    "priority": "P1",
+    "error_details": {
+        "error_type": "TypeError",
+        "error_message": "Cannot read properties of undefined (reading 'forEach')",
+        "stack_trace": [
+            "CacheService.cacheFunctionalBlocks (line 217:16)",
+            "CachedApiService.getFunctionalBlocks (line 230:31)",
+            "CacheService.cacheProjects (line 164:18)", 
+            "CachedApiService.getProjects (line 57:31)"
+        ],
+        "affected_methods": [
+            "CacheService.cacheProjects",
+            "CacheService.cacheFunctionalBlocks", 
+            "CacheService.cacheTasks",
+            "CacheService.cacheDocuments"
+        ]
+    },
+    "root_cause": "API методы могут возвращать undefined/null, но методы кэширования не проверяют входные параметры перед вызовом forEach",
+    "reproduction_steps": [
+        "1. Запустить расширение в Cursor IDE",
+        "2. API возвращает undefined для getProjects() или getFunctionalBlocks()",
+        "3. CachedApiService передает undefined в методы кэширования",
+        "4. CacheService пытается вызвать forEach на undefined",
+        "5. Возникает TypeError"
+    ],
+    "impact": [
+        "Расширение не может загрузить данные проектов",
+        "Расширение не может отобразить функциональные блоки", 
+        "Полная неработоспособность расширения",
+        "Пользователь видит ошибки в консоли браузера"
+    ],
+    "fix_plan": [
+        "1. Добавить проверку null/undefined в методы кэширования CacheService",
+        "2. Добавить валидацию данных в CachedApiService перед кэшированием",
+        "3. Добавить регрессионные unit тесты",
+        "4. Пересобрать и обновить расширение"
+    ],
+    "prevention_measures": [
+        "Добавить TypeScript строгие проверки null",
+        "Создать тесты для edge cases с undefined данными",
+        "Добавить валидацию входных параметров во все методы кэширования"
+    ],
+    "resolution": {
+        "date": "2025-01-23",
+        "version": "0.4.4",
+        "changes_made": [
+            "Добавлены null/undefined проверки в CacheService.cacheProjects()",
+            "Добавлены null/undefined проверки в CacheService.cacheFunctionalBlocks()",
+            "Добавлены null/undefined проверки в CacheService.cacheTasks()",
+            "Добавлены null/undefined проверки в CacheService.cacheDocuments()",
+            "Улучшена обработка ошибок в CachedApiService.getProjects()",
+            "Улучшена обработка ошибок в CachedApiService.getFunctionalBlocks()",
+            "Улучшена обработка ошибок в CachedApiService.getDocuments()",
+            "Создан регрессионный тест B014_EXT_regression_test.ts"
+        ],
+        "technical_details": "Проблема была в том, что API методы могли возвращать undefined/null, но методы кэширования пытались вызвать forEach без проверки типа данных. Исправление включает проверку Array.isArray() перед forEach и возврат пустых массивов вместо выброса ошибок для лучшего UX.",
+        "verification": "Компиляция успешна, создан VSIX пакет project-master-extension-0.4.4.vsix (515 files, 1.06MB)",
+        "installation_note": "Пользователь должен удалить старую версию расширения из .cursor/extensions и установить новую версию 0.4.4"
+    }
+} 

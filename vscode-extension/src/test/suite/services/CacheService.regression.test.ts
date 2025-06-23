@@ -105,4 +105,74 @@ suite('CacheService Regression Tests - B013_EXT', () => {
         const usage2 = cacheService.getStats().memoryUsage;
         assert.strictEqual(usage1, usage2, 'Memory usage calculation should be consistent');
     });
+});
+
+suite('B014_EXT Regression Tests - forEach на undefined', () => {
+    let cacheService: CacheService;
+
+    setup(() => {
+        cacheService = new CacheService(100, 60000);
+    });
+
+    teardown(() => {
+        cacheService.dispose();
+    });
+
+    test('should handle undefined projects in cacheProjects', () => {
+        // Должно не падать при передаче undefined
+        assert.doesNotThrow(() => {
+            cacheService.cacheProjects(undefined as any);
+        }, 'CacheProjects should handle undefined gracefully');
+    });
+
+    test('should handle null projects in cacheProjects', () => {
+        // Должно не падать при передаче null
+        assert.doesNotThrow(() => {
+            cacheService.cacheProjects(null as any);
+        }, 'CacheProjects should handle null gracefully');
+    });
+
+    test('should handle undefined functional blocks in cacheFunctionalBlocks', () => {
+        // Должно не падать при передаче undefined
+        assert.doesNotThrow(() => {
+            cacheService.cacheFunctionalBlocks(undefined as any);
+        }, 'CacheFunctionalBlocks should handle undefined gracefully');
+    });
+
+    test('should handle null functional blocks in cacheFunctionalBlocks', () => {
+        // Должно не падать при передаче null
+        assert.doesNotThrow(() => {
+            cacheService.cacheFunctionalBlocks(null as any);
+        }, 'CacheFunctionalBlocks should handle null gracefully');
+    });
+
+    test('should handle undefined tasks in cacheTasks', () => {
+        // Должно не падать при передаче undefined
+        assert.doesNotThrow(() => {
+            cacheService.cacheTasks(undefined as any);
+        }, 'CacheTasks should handle undefined gracefully');
+    });
+
+    test('should handle undefined documents in cacheDocuments', () => {
+        // Должно не падать при передаче undefined
+        assert.doesNotThrow(() => {
+            cacheService.cacheDocuments(undefined as any);
+        }, 'CacheDocuments should handle undefined gracefully');
+    });
+
+    test('should handle non-array data in cacheProjects', () => {
+        // Должно не падать при передаче строки вместо массива
+        assert.doesNotThrow(() => {
+            cacheService.cacheProjects('invalid data' as any);
+        }, 'CacheProjects should handle non-array data gracefully');
+    });
+
+    test('should not cache invalid data', () => {
+        // Кэш должен остаться пустым после попытки кэширования undefined
+        cacheService.cacheProjects(undefined as any);
+        assert.strictEqual(cacheService.getCachedProjects(), null, 'Should not cache undefined projects');
+        
+        cacheService.cacheFunctionalBlocks(null as any);
+        assert.strictEqual(cacheService.getCachedFunctionalBlocks(), null, 'Should not cache null functional blocks');
+    });
 }); 

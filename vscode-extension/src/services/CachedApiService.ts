@@ -54,11 +54,19 @@ export class CachedApiService implements IApiService {
 
         try {
             const projects = await this.apiService.getProjects();
-            this.cacheService.cacheProjects(projects);
-            return projects;
+            
+            // Проверка и валидация полученных данных
+            if (Array.isArray(projects)) {
+                this.cacheService.cacheProjects(projects);
+                return projects;
+            } else {
+                this.logger.warn('API returned non-array projects data:', projects);
+                return []; // Возвращаем пустой массив вместо undefined
+            }
         } catch (error) {
             this.logger.error('Failed to fetch projects', error);
-            throw error;
+            // Возвращаем пустой массив вместо выброса ошибки для лучшего UX
+            return [];
         }
     }
 
@@ -227,11 +235,19 @@ export class CachedApiService implements IApiService {
 
         try {
             const blocks = await this.apiService.getFunctionalBlocks();
-            this.cacheService.cacheFunctionalBlocks(blocks, 10 * 60 * 1000); // 10 минут
-            return blocks;
+            
+            // Проверка и валидация полученных данных
+            if (Array.isArray(blocks)) {
+                this.cacheService.cacheFunctionalBlocks(blocks, 10 * 60 * 1000); // 10 минут
+                return blocks;
+            } else {
+                this.logger.warn('API returned non-array functional blocks data:', blocks);
+                return []; // Возвращаем пустой массив вместо undefined
+            }
         } catch (error) {
             this.logger.error('Failed to fetch functional blocks', error);
-            throw error;
+            // Возвращаем пустой массив вместо выброса ошибки для лучшего UX
+            return [];
         }
     }
 
@@ -246,11 +262,19 @@ export class CachedApiService implements IApiService {
 
         try {
             const documents = await this.apiService.getDocuments(projectId);
-            this.cacheService.cacheDocuments(documents, projectId);
-            return documents;
+            
+            // Проверка и валидация полученных данных
+            if (Array.isArray(documents)) {
+                this.cacheService.cacheDocuments(documents, projectId);
+                return documents;
+            } else {
+                this.logger.warn('API returned non-array documents data:', documents);
+                return []; // Возвращаем пустой массив вместо undefined
+            }
         } catch (error) {
             this.logger.error('Failed to fetch documents', error);
-            throw error;
+            // Возвращаем пустой массив вместо выброса ошибки для лучшего UX
+            return [];
         }
     }
 

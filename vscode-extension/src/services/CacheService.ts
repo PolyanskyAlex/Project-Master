@@ -158,6 +158,12 @@ export class CacheService {
      * Кэширование проектов
      */
     public cacheProjects(projects: Project[], ttl?: number): void {
+        // Проверка на null/undefined
+        if (!projects || !Array.isArray(projects)) {
+            this.logger.warn('Cannot cache projects: received null/undefined or non-array data', projects);
+            return;
+        }
+        
         this.set('projects:all', projects, ttl);
         
         // Кэширование отдельных проектов
@@ -184,6 +190,12 @@ export class CacheService {
      * Кэширование задач
      */
     public cacheTasks(tasks: Task[], projectId?: string, ttl?: number): void {
+        // Проверка на null/undefined
+        if (!tasks || !Array.isArray(tasks)) {
+            this.logger.warn('Cannot cache tasks: received null/undefined or non-array data', tasks);
+            return;
+        }
+        
         const key = projectId ? `tasks:project:${projectId}` : 'tasks:all';
         this.set(key, tasks, ttl);
         
@@ -212,6 +224,12 @@ export class CacheService {
      * Кэширование функциональных блоков
      */
     public cacheFunctionalBlocks(blocks: FunctionalBlock[], ttl?: number): void {
+        // Проверка на null/undefined
+        if (!blocks || !Array.isArray(blocks)) {
+            this.logger.warn('Cannot cache functional blocks: received null/undefined or non-array data', blocks);
+            return;
+        }
+        
         this.set('functional-blocks:all', blocks, ttl);
         
         blocks.forEach(block => {
@@ -230,6 +248,12 @@ export class CacheService {
      * Кэширование документов
      */
     public cacheDocuments(documents: Document[], projectId?: string, ttl?: number): void {
+        // Проверка на null/undefined
+        if (!documents || !Array.isArray(documents)) {
+            this.logger.warn('Cannot cache documents: received null/undefined or non-array data', documents);
+            return;
+        }
+        
         const key = projectId ? `documents:project:${projectId}` : 'documents:all';
         this.set(key, documents, ttl);
         
