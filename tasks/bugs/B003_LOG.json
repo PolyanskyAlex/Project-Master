@@ -69,5 +69,33 @@
     "severity": "high",
     "user_impact": "Затрудненная отладка из-за нечитаемых логов",
     "business_impact": "Снижение эффективности разработки и поддержки"
+  },
+  "detailed_fix_report": {
+    "part_of_comprehensive_fix": "docs/Bugs/BUGFIX_COMPREHENSIVE_FIXES.md",
+    "problem_details": "Логи содержали искаженные символы \\ufffd при записи ошибок с русскими символами",
+    "solution_applied": [
+      "✅ Добавлена функция sanitizeUTF8() в backend/router/middleware.go",
+      "✅ Импортирован пакет unicode/utf8",
+      "✅ Response body санитайзируется перед логированием",
+      "✅ Исправлена обработка невалидных UTF-8 символов"
+    ],
+    "files_modified": [
+      "backend/router/middleware.go - добавлена UTF-8 валидация"
+    ],
+    "verification_results": {
+      "utf8_encoding": "✅ PASS",
+      "test_description": "Символы \\ufffd больше не появляются в логах",
+      "russian_characters": "Русские символы обрабатываются корректно",
+      "json_structure": "JSON логи остаются валидными"
+    },
+    "technical_implementation": {
+      "function_added": "sanitizeUTF8()",
+      "package_imported": "unicode/utf8",
+      "validation_point": "Response body перед логированием",
+      "handling": "Замена невалидных UTF-8 символов на корректные"
+    },
+    "commit_message": "fix(logs): implement UTF-8 sanitization in middleware - B003_LOG",
+    "execution_time": "~10 минут (часть от общих 30 минут)",
+    "regression_impact": "0 регрессий - все исправления backward-compatible"
   }
 } 

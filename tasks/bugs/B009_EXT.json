@@ -31,6 +31,82 @@
     "extension_path": "c:\\Users\\user\\.cursor\\extensions\\project-master.project-master-extension-0.4.1\\",
     "development_path": "D:\\Alex\\Soft Development2\\Product_Factory\\Project Master\\vscode-extension\\"
   },
+  "detailed_problem_analysis": {
+    "core_issue": "Cursor IDE загружает расширение из установленного пакета вместо исправленной версии",
+    "load_path": "c:\\Users\\user\\.cursor\\extensions\\project-master.project-master-extension-0.4.1\\",
+    "symptoms_detail": [
+      "❌ command 'projectMaster.projectSelected' already exists",
+      "❌ 401 Unauthorized API errors",
+      "Старая версия без исправлений продолжает работать"
+    ]
+  },
+  "solution_steps": {
+    "step_1": {
+      "title": "Удалить старое расширение",
+      "actions": [
+        "Откройте Cursor IDE",
+        "Перейдите в Extensions (Ctrl+Shift+X)",
+        "Найдите Project Master в списке установленных",
+        "Нажмите кнопку Uninstall ⚠️ ОБЯЗАТЕЛЬНО!",
+        "Перезапустите Cursor IDE полностью"
+      ]
+    },
+    "step_2": {
+      "title": "Установить исправленную версию",
+      "variant_a": {
+        "title": "Установка из пакета (Рекомендуется)",
+        "actions": [
+          "Откройте Command Palette (Ctrl+Shift+P)",
+          "Введите: Extensions: Install from VSIX...",
+          "Выберите файл: project-master-extension-0.4.1.vsix",
+          "Дождитесь установки",
+          "Перезагрузите окно: Developer: Reload Window"
+        ]
+      },
+      "variant_b": {
+        "title": "Разработческий режим",
+        "actions": [
+          "Откройте папку проекта в Cursor",
+          "Нажмите F5 для запуска Extension Development Host",
+          "В новом окне проверьте работу расширения"
+        ]
+      }
+    },
+    "step_3": {
+      "title": "Проверка исправлений",
+      "verification": [
+        "Откройте Developer Console (Ctrl+Shift+I)",
+        "Перезагрузите окно (Developer: Reload Window)",
+        "Проверьте логи - НЕ должно быть ошибок",
+        "Должно быть: ✅ === Project Master: activate() called ==="
+      ]
+    }
+  },
+  "fixes_in_new_version": {
+    "fix_1": {
+      "title": "Дублирование команды",
+      "before": "❌ vscode.commands.registerCommand('projectMaster.projectSelected', ...) в TasksProvider.ts",
+      "after": "✅ ОСТАЕТСЯ ТОЛЬКО в extension.ts с правильной логикой"
+    },
+    "fix_2": {
+      "title": "API авторизация",
+      "config_service": "return this.config.get<string>('apiKey', 'test-api-key-12345'); // ✅ Исправлено",
+      "package_json": "\"default\": \"test-api-key-12345\" // ✅ Исправлено"
+    }
+  },
+  "file_paths": {
+    "old_extension_to_delete": "c:\\Users\\user\\.cursor\\extensions\\project-master.project-master-extension-0.4.1\\",
+    "new_package": "D:\\Alex\\Soft Development2\\Product_Factory\\Project Master\\vscode-extension\\project-master-extension-0.4.1.vsix",
+    "source_code": "D:\\Alex\\Soft Development2\\Product_Factory\\Project Master\\vscode-extension\\"
+  },
+  "troubleshooting": {
+    "if_problems_persist": [
+      "Полностью закройте Cursor IDE",
+      "Удалите папку: c:\\Users\\user\\.cursor\\extensions\\project-master.project-master-extension-0.4.1\\",
+      "Перезапустите Cursor",
+      "Установите заново из VSIX"
+    ]
+  },
   "fix_approach": [
     "Удалить установленное расширение из .cursor/extensions",
     "Загрузить расширение из исходников для разработки",
@@ -42,6 +118,13 @@
     "Изменения в коде сразу влияют на работу",
     "Ошибка дублирования команды исчезает",
     "API ключ применяется корректно"
+  ],
+  "success_criteria": [
+    "✅ Нет ошибок command already exists",
+    "✅ Нет ошибок 401 Unauthorized",
+    "✅ Панели Project Master отображают данные",
+    "✅ Команды расширения работают",
+    "✅ Проекты загружаются корректно"
   ],
   "created_at": "2024-12-22T09:34:00Z",
   "updated_at": "2024-12-22T09:34:00Z", 

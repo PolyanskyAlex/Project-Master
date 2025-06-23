@@ -34,16 +34,119 @@
       "solution": "Добавлена проверка и остановка существующих go.exe и node.exe"
     }
   ],
+  "detailed_analysis": {
+    "diagnostic_commands": [
+      "tasklist | findstr /i \"go.exe node.exe\"",
+      "netstat -an | findstr \":3000 :3001 :8080\"",
+      "docker-compose ps"
+    ],
+    "found_issues": {
+      "processes_running": [
+        "1 процесс go.exe (PID 13696)",
+        "5 процессов node.exe (PID 7376, 22660, 4324, 5088, 21116)"
+      ],
+      "ports_occupied": ["3000", "8080"],
+      "docker_status": "контейнеры работают корректно"
+    },
+    "root_causes": [
+      "PowerShell требует явного указания пути для выполнения bat-файлов",
+      "npm start интерактивно запрашивает альтернативный порт при занятом 3000",
+      "pause >nul ожидала пользовательский ввод",
+      "Флаг /k держал окна терминалов открытыми",
+      "Не было проверки существующих процессов перед запуском"
+    ]
+  },
+  "solution_applied": {
+    "dev_start_improvements": [
+      "Добавлена проверка Docker",
+      "Добавлена проверка и освобождение портов 3000, 3001, 8080",
+      "Улучшена логика остановки процессов (специфично для npm start)",
+      "Добавлены переменные CI=true и BROWSER=none для отключения интерактивных запросов",
+      "Заменен start /min cmd /c на start /b для фонового выполнения",
+      "Создание правильных .env файлов для backend и frontend",
+      "Увеличены таймауты для стабильного запуска"
+    ],
+    "dev_stop_improvements": [
+      "Умная остановка процессов по командной строке",
+      "Освобождение портов по PID",
+      "Корректная остановка Docker контейнеров",
+      "Детальная отчетность о действиях"
+    ],
+    "architecture_enhancement": [
+      "[1/7] Checking prerequisites (Go, Node.js, Docker)",
+      "[2/7] Checking and freeing ports (3000, 3001, 8080)",
+      "[3/7] Stopping any existing processes (умная остановка npm start)",
+      "[4/7] Starting PostgreSQL (Docker)",
+      "[5/7] Waiting for database to be ready",
+      "[6/7] Installing frontend dependencies (с CI=true)",
+      "[7/7] Starting services (фоновые процессы)"
+    ]
+  },
+  "environment_variables": {
+    "frontend_env_local": {
+      "BROWSER": "none",
+      "CI": "true",
+      "SKIP_PREFLIGHT_CHECK": "true",
+      "PORT": "3000"
+    },
+    "backend_env": {
+      "PORT": "8080",
+      "DB_HOST": "localhost",
+      "DB_PORT": "5433",
+      "DB_NAME": "project_master",
+      "DB_USER": "postgres",
+      "DB_PASSWORD": "postgres"
+    }
+  },
   "files_modified": [
     "dev-start.bat",
     "dev-stop.bat",
     "dev-restart-backend.bat", 
     "dev-restart-frontend.bat"
   ],
+  "usage_instructions": {
+    "start_all_services": {
+      "powershell": ".\\dev-start.bat",
+      "cmd": "dev-start.bat"
+    },
+    "stop_all_services": {
+      "powershell": ".\\dev-stop.bat",
+      "cmd": "dev-stop.bat"
+    },
+    "restart_individual_components": [
+      ".\\dev-restart-backend.bat   # Только backend",
+      ".\\dev-restart-frontend.bat  # Только frontend"
+    ]
+  },
+  "verification_status": {
+    "completed_fixes": [
+      "✅ Исправлена проблема с блокировкой терминала",
+      "✅ Исправлена проблема с внешними терминалами",
+      "✅ Добавлена проверка существующих процессов",
+      "✅ Создан механизм корректной остановки"
+    ],
+    "partial_fixes": [
+      "⚠️ Частично исправлена проблема с дублированием портов"
+    ],
+    "remaining_issues": [
+      "❌ Остается проблема с кодировкой терминала в некоторых случаях"
+    ]
+  },
+  "recommendations": [
+    "Для PowerShell: Всегда используйте .\\префикс для bat-файлов",
+    "Для cmd: Можно использовать прямые имена файлов",
+    "При проблемах: Используйте dev-stop.bat для полной очистки перед повторным запуском",
+    "Мониторинг: Проверяйте статус процессов через Task Manager при проблемах"
+  ],
   "testing": {
     "manual_test": "Запуск .\\dev-start.bat в PowerShell",
     "expected_result": "Сервисы запускаются в фоне без блокировки терминала",
     "actual_result": "Частично исправлено, остается проблема с кодировкой терминала"
   },
+  "related_tasks": [
+    "B005_EXT - Исправление расширения Project Master",
+    "B008_EXT - Проблемы с авторизацией API",
+    "B009_EXT - Проблемы с перезагрузкой расширения"
+  ],
   "resolution": "В процессе - исправлены основные проблемы архитектуры скриптов"
 } 

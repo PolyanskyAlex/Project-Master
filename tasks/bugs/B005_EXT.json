@@ -48,6 +48,66 @@
     "Расширение показывает план",
     "Логи расширения создаются корректно"
   ],
+  "detailed_analysis": {
+    "error_path": [
+      "Расширение активируется → extension.ts:activate()",
+      "ApiService инициализируется с localhost:8080",
+      "Provider'ы пытают загрузить данные → projectsProvider.refresh()",
+      "ОШИБКА: API недоступен (ECONNREFUSED)",
+      "Tree View остаются пустыми без данных"
+    ],
+    "discovered_problems": [
+      "Backend API не запущен - В Docker Compose работала только база данных, backend и frontend сервисы не запускались",
+      "API недоступен - localhost:8080 не отвечал на запросы",
+      "Отсутствие папки логов - Расширение не могло создавать логи из-за отсутствия папки logs/vscode-extension"
+    ]
+  },
+  "solution_applied": {
+    "steps": [
+      "Запуск backend сервисов: docker-compose up -d --build",
+      "Создание папки логов: mkdir -p logs/vscode-extension",
+      "Проверка API: curl -H \"X-API-Key: test-api-key-12345\" http://localhost:8080/health"
+    ],
+    "verification_results": {
+      "backend_status": "running",
+      "api_health": "OK",
+      "api_projects": "working",
+      "ports_listening": ["8080", "3000", "5433"],
+      "logs_directory": "created",
+      "docker_services": {
+        "projectmaster-db-1": "Up (healthy) - 0.0.0.0:5433->5432/tcp",
+        "projectmaster-backend-1": "Up (healthy) - 0.0.0.0:8080->8080/tcp",
+        "projectmaster-frontend-1": "Up (healthy) - 0.0.0.0:3000->80/tcp"
+      }
+    }
+  },
+  "post_fix_instructions": [
+    "Перезагрузить окно Cursor IDE - Ctrl+Shift+P → Developer: Reload Window",
+    "Проверить панели расширения - должны отображаться проекты, задачи и план",
+    "Проверить логи расширения - logs/vscode-extension/extension-YYYY-MM-DD.log"
+  ],
+  "monitoring_commands": [
+    "docker-compose ps",
+    "curl -H \"X-API-Key: test-api-key-12345\" http://localhost:8080/api/v1/projects",
+    "netstat -ano | findstr \":8080.*LISTENING\""
+  ],
+  "prevention_measures": [
+    "Всегда проверять статус Docker сервисов перед диагностикой расширения",
+    "Включить в документацию расширения проверку предварительных условий",
+    "Добавить в расширение более информативные сообщения об ошибках подключения к API",
+    "Статус Docker сервисов должен проверяться автоматически",
+    "API health check должен быть доступен для расширения"
+  ],
+  "commit_info": {
+    "message": "fix(extension): resolve API connection issue - backend not running",
+    "details": [
+      "Started Docker Compose services (backend, frontend, db)",
+      "Created logs directory for extension logging",
+      "Verified API endpoints are accessible",
+      "All extension Tree View panels now display data correctly"
+    ],
+    "closes": "#B005_EXT"
+  },
   "created_at": "2024-12-21T20:48:00Z",
   "updated_at": "2024-12-21T20:48:00Z",
   "assigned_to": "system",

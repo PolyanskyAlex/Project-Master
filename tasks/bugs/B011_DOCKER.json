@@ -113,5 +113,7 @@
      "final_status": "RESOLVED",
      "resolution_time": "5 minutes",
      "confirmed_solution": "Радикальный перезапуск Docker Desktop с административными правами решает проблему стабильно"
-   }
+   },
+   "detailed_report": "docs/Bugs/BUGFIX_DOCKER_ENGINE_CONNECTION.md",
+   "analysis_notes": "Подробный анализ и все этапы решения задокументированы в соответствующем отчете. Docker Desktop на Windows нестабилен без административных прав - именованный канал dockerDesktopLinuxEngine может быть недоступен даже при запущенных процессах."
 } 
