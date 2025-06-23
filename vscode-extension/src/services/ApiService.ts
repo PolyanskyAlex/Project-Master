@@ -138,8 +138,8 @@ export class ApiService implements IApiService {
     // Projects
     async getProjects(): Promise<Project[]> {
         try {
-            const response: AxiosResponse<ApiResponse<Project[]>> = await this.client.get('/api/v1/projects');
-            return response.data.data;
+            const response: AxiosResponse<Project[]> = await this.client.get('/api/v1/projects');
+            return response.data;
         } catch (error) {
             this.logger.error('Failed to fetch projects', error);
             throw error;
@@ -148,8 +148,8 @@ export class ApiService implements IApiService {
 
     async getProject(id: string): Promise<Project> {
         try {
-            const response: AxiosResponse<ApiResponse<Project>> = await this.client.get(`/api/v1/projects/${id}`);
-            return response.data.data;
+            const response: AxiosResponse<Project> = await this.client.get(`/api/v1/projects/${id}`);
+            return response.data;
         } catch (error) {
             this.logger.error(`Failed to fetch project ${id}`, error);
             throw error;
@@ -170,8 +170,8 @@ export class ApiService implements IApiService {
     async getTasks(projectId?: string): Promise<Task[]> {
         try {
             const url = projectId ? `/api/v1/tasks?project_id=${projectId}` : '/api/v1/tasks';
-            const response: AxiosResponse<ApiResponse<Task[]>> = await this.client.get(url);
-            return response.data.data;
+            const response: AxiosResponse<Task[]> = await this.client.get(url);
+            return response.data;
         } catch (error) {
             this.logger.error('Failed to fetch tasks', error);
             throw error;
@@ -220,8 +220,8 @@ export class ApiService implements IApiService {
     // Functional Blocks
     async getFunctionalBlocks(): Promise<FunctionalBlock[]> {
         try {
-            const response: AxiosResponse<ApiResponse<FunctionalBlock[]>> = await this.client.get('/api/v1/functional-blocks');
-            return response.data.data;
+            const response: AxiosResponse<FunctionalBlock[]> = await this.client.get('/api/v1/functional-blocks');
+            return response.data;
         } catch (error) {
             this.logger.error('Failed to fetch functional blocks', error);
             throw error;

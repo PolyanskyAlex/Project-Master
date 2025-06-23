@@ -1,0 +1,133 @@
+{
+  "id": "B015_EXT",
+  "title": "Extension API Service неправильно парсит ответы backend API",
+  "description": "Расширение Project Master не отображает проекты и задачи в Tree View из-за неправильного парсинга ответов API",
+  "status": "RESOLVED",
+  "severity": "CRITICAL",
+  "type": "API_INTEGRATION",
+  "created_at": "2025-06-23T12:00:00Z",
+  "updated_at": "2025-06-23T12:15:00Z",
+  "resolved_at": "2025-06-23T12:15:00Z",
+  
+  "environment": {
+    "extension_version": "0.4.4",
+    "vscode_version": "Cursor IDE",
+    "backend_version": "latest",
+    "os": "Windows 10"
+  },
+  
+  "symptoms": [
+    "Расширение не отображает проекты в Tree View",
+    "Задачи отсутствуют в панели расширения", 
+    "Web UI показывает данные корректно",
+    "Backend API возвращает данные при curl запросах",
+    "В консоли: 'API returned non-array functional blocks data'",
+    "В консоли: 'API returned non-array projects data'"
+  ],
+  
+  "error_details": {
+    "primary_error": "API returned non-array data",
+    "console_messages": [
+      "[WARN] API returned non-array functional blocks data:",
+      "[WARN] API returned non-array projects data:"
+    ],
+    "location": "ApiService.ts методы getProjects(), getTasks(), getFunctionalBlocks()",
+    "stack_trace": "Не применимо - логическая ошибка"
+  },
+  
+  "root_cause": {
+    "analysis": "Несоответствие между форматом ответа backend API и ожиданиями ApiService",
+    "technical_details": [
+      "Backend API возвращает массивы напрямую: [Project[], Task[], FunctionalBlock[]]",
+      "ApiService ожидал обёртку ApiResponse<T[]> и пытался получить response.data.data",
+      "При попытке получить data.data из массива возвращался undefined",
+      "CacheService получал undefined вместо массивов и выдавал предупреждения"
+    ],
+    "verification": "curl -H 'X-API-Key: dev-api-key-12345' http://localhost:8080/api/v1/projects возвращает массив напрямую"
+  },
+  
+  "impact": {
+    "user_experience": "Критическое - расширение полностью нефункционально",
+    "business_logic": "Блокирует использование расширения для управления проектами",
+    "data_integrity": "Не затронута - данные в backend корректны",
+    "performance": "Не применимо"
+  },
+  
+  "reproduction_steps": [
+    "1. Запустить backend API (docker-compose up -d)",
+    "2. Установить расширение Project Master v0.4.4",
+    "3. Открыть Tree View расширения",
+    "4. Наблюдать пустые панели проектов и задач",
+    "5. Проверить консоль разработчика на предупреждения"
+  ],
+  
+  "solution": {
+    "approach": "Исправление типов и логики получения данных в ApiService",
+    "implementation": [
+      "1. Изменить типы ответов с ApiResponse<T[]> на T[]",
+      "2. Заменить return response.data.data на return response.data",
+      "3. Обновить методы getProjects(), getTasks(), getFunctionalBlocks(), getProject()",
+      "4. Скомпилировать и пересобрать расширение"
+    ],
+    "code_changes": [
+      "ApiService.ts: изменены типы AxiosResponse<ApiResponse<Project[]>> → AxiosResponse<Project[]>",
+      "ApiService.ts: изменена логика response.data.data → response.data",
+      "package.json: версия обновлена до 0.4.5"
+    ]
+  },
+  
+  "testing": {
+    "verification_steps": [
+      "1. Компиляция без ошибок: ✅",
+      "2. Создание VSIX пакета: ✅", 
+      "3. Backend API работает корректно: ✅",
+      "4. curl запросы возвращают правильные данные: ✅"
+    ],
+    "test_results": {
+      "compilation": "SUCCESS",
+      "package_creation": "SUCCESS - project-master-extension-0.4.5.vsix",
+      "api_validation": "SUCCESS - все endpoints возвращают корректные массивы"
+    }
+  },
+  
+  "prevention": {
+    "immediate": [
+      "Добавить unit тесты для ApiService с мокированием backend ответов",
+      "Создать интеграционные тесты для проверки формата API ответов"
+    ],
+    "long_term": [
+      "Внедрить TypeScript strict mode для более строгой типизации",
+      "Добавить автоматические тесты API контрактов",
+      "Создать схему валидации API ответов"
+    ]
+  },
+  
+  "related_bugs": [
+    "B013_EXT - похожая проблема с undefined данными в CacheService",
+    "B014_EXT - forEach TypeError из-за undefined данных"
+  ],
+  
+  "resolution": {
+    "status": "RESOLVED",
+    "version": "0.4.5",
+    "deliverables": [
+      "Исправленный ApiService.ts",
+      "VSIX пакет project-master-extension-0.4.5.vsix",
+      "Документация бага B015_EXT.json"
+    ],
+    "next_steps": [
+      "Установить новый VSIX пакет в Cursor IDE",
+      "Перезагрузить расширение",
+      "Проверить отображение проектов и задач в Tree View"
+    ]
+  },
+  
+  "documentation": {
+    "bug_report": "tasks/bugs/B015_EXT.json",
+    "solution_commit": "Будет создан после коммита",
+    "related_files": [
+      "vscode-extension/src/services/ApiService.ts",
+      "vscode-extension/package.json"
+    ]
+  }
+} 
