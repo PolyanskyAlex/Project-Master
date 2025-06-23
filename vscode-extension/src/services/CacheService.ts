@@ -451,7 +451,7 @@ export class CacheService {
             // Безопасная обработка item.data для предотвращения TypeError
             try {
                 if (item.data !== undefined && item.data !== null) {
-                    totalSize += JSON.stringify(item.data).length * 2;
+            totalSize += JSON.stringify(item.data).length * 2;
                 } else {
                     totalSize += 16; // Размер для null/undefined (8 байт + запас)
                 }

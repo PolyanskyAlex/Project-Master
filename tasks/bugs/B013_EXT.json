@@ -66,6 +66,27 @@
     },
     "commit_hash": "5a54023"
   },
+  "recurrence_issue": {
+    "date": "2025-06-23T08:40:06Z",
+    "description": "Ошибка повторилась, так как используется старая версия расширения из .cursor/extensions",
+    "root_cause": "Cursor IDE загружает расширение из установленного пакета, а не из исходников с исправлениями",
+    "installed_version": "0.4.2",
+    "error_path": "c:\\Users\\user\\.cursor\\extensions\\project-master.project-master-extension-0.4.2\\",
+    "solution": "Пересборка и установка новой версии расширения"
+  },
+  "final_resolution": {
+    "version": "0.4.3",
+    "package_file": "project-master-extension-0.4.3.vsix",
+    "package_size": "1.06MB (515 files)",
+    "build_date": "2025-06-23",
+    "installation_required": true,
+    "installation_steps": [
+      "1. Удалить старое расширение Project Master из Cursor IDE",
+      "2. Установить: Ctrl+Shift+P → Extensions: Install from VSIX",
+      "3. Выбрать project-master-extension-0.4.3.vsix",
+      "4. Перезагрузить окно: Developer: Reload Window"
+    ]
+  },
   "assignee": "AI-Assistant",
   "estimated_effort": "2 hours",
   "tags": ["extension", "cache", "typescript", "error-handling"]

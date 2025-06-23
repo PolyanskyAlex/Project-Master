@@ -139,8 +139,8 @@ export class CachedApiService implements IApiService {
             
             // Проверка и валидация полученных данных
             if (Array.isArray(tasks)) {
-                this.cacheService.cacheTasks(tasks, projectId);
-                return tasks;
+            this.cacheService.cacheTasks(tasks, projectId);
+            return tasks;
             } else {
                 this.logger.warn('API returned non-array tasks data:', tasks);
                 return []; // Возвращаем пустой массив вместо undefined
