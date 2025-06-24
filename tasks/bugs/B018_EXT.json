@@ -1,238 +1,48 @@
 {
   "id": "B018_EXT",
-  "title": "Task Data Mapping Issue - undefined fields in IDE",
-  "description": "VSCode расширение отображает undefined для многих параметров задач в IDE, хотя в UI данные корректны",
-  "type": "bug",
-  "priority": "critical",
+  "title": "Ошибка отображения задач при выборе из списка",
+  "description": "При выборе задачи из Task Tree View передается task.id в команду openTask, но команда передает его как Task объект в viewTaskDetails. Аналогично исправленной B016_EXT с проектами.",
   "status": "RESOLVED",
-  "functional_block": "VSCode Extension",
-  "created_at": "2025-01-27T14:00:00Z",
-  "updated_at": "2025-01-27T14:00:00Z",
-  "problem_details": {
-    "component": "VSCode Extension",
-    "affected_versions": ["0.4.6", "0.4.7"],
-    "symptoms": [
-      "Status: undefined",
-      "Priority: undefined", 
-      "Type: undefined",
-      "Project: Unknown Project",
-      "Created: Invalid Date",
-      "Assignee: Unassigned"
-    ]
+  "priority": "критический",
+  "type": "bug",
+  "functional_block": "Extension Commands",
+  "steps_to_reproduce": [
+    "1. Открыть расширение Project Master",
+    "2. Выбрать проект",
+    "3. Кликнуть по задаче в Task Tree View",
+    "4. Наблюдать ошибку - выводится по старому"
+  ],
+  "expected_behavior": "Должна открыться детальная информация о задаче",
+  "actual_behavior": "Выводится по старому - неправильные данные",
+  "environment": {
+    "extension_version": "0.4.6",
+    "vscode_version": "latest",
+    "os": "Windows"
   },
-  "root_cause": {
-    "primary": "Method getTask() in ApiService.ts had no data mapping",
-    "secondary": "Backend API fields mismatch with extension expectations",
-    "details": {
-      "backend_format": "camelCase (projectId, createdAt, updatedAt)",
-      "extension_format": "snake_case (project_id, created_at, updated_at)",
-      "missing_fields": ["assignedTo", "dueDate", "estimatedHours", "actualHours", "tags"]
-    }
+  "analysis": {
+    "root_cause": "Команда openTask в commands/index.ts:273 получает task.id (string) из TaskItem.command.arguments[0], но передает этот ID как Task объект в viewTaskDetails. TaskCommands.viewTaskDetails ожидает полный Task объект.",
+    "files_affected": [
+      "vscode-extension/src/commands/index.ts",
+      "vscode-extension/src/providers/TasksProvider.ts"
+    ],
+    "similar_issues": "Аналогично исправленной B016_EXT для ProjectsProvider"
   },
   "solution": {
-    "approach": "Added complete data mapping in getTask() method",
-    "changes": [
-      "Fixed getTask() to map camelCase to snake_case",
-      "Added null handling for missing backend fields", 
-      "Updated both getTask() and getTasks() for consistency",
-      "Added proper status/priority/type mapping"
+    "approach": "Исправить команду openTask чтобы она получала task.id и загружала полный Task объект через ApiService.getTask()",
+    "implementation_plan": [
+      "1. Изменить логику openTask для работы с task.id",
+      "2. Добавить загрузку полного Task объекта через ApiService",
+      "3. Обновить версию пакета до 0.4.7",
+      "4. Создать регрессионный тест"
     ]
-  },
-  "technical_details": {
-    "files_modified": [
-      "vscode-extension/src/services/ApiService.ts"
-    ],
-    "key_changes": {
-      "getTask_mapping": "Added full camelCase to snake_case transformation",
-      "null_handling": "Added || null for missing backend fields",
-      "consistency": "Made getTasks() and getTask() mappings identical"
-    }
-  },
-  "resolution": {
-    "version": "0.4.8",
-    "date": "2025-01-21",
-    "status": "RESOLVED",
-    "verification": {
-      "compilation": "SUCCESS",
-      "package_creation": "project-master-extension-0.4.8.vsix",
-      "expected_result": "All task fields now display correctly in IDE"
-    }
   },
   "testing": {
-    "before_fix": {
-      "status": "undefined",
-      "priority": "undefined",
-      "type": "undefined",
-      "created": "Invalid Date"
-    },
-    "after_fix": {
-      "status": "todo (from 'Новая')",
-      "priority": "medium (from 'Средний')",
-      "type": "feature (from 'Новый функционал')", 
-      "created": "2025-06-21T17:45:58.643Z"
-    }
-  },
-  "documentation": {
-    "bugfix_doc": "docs/Bugs/BUGFIX_B018_TASK_DATA_MAPPING.md",
-    "status": "Complete with mapping tables and testing results"
-  },
-  "related_issues": [
-    "B016_EXT - Circular references (resolved v0.4.6)",
-    "B015_EXT - API response format (resolved v0.4.5)"
-  ],
-  "root_cause_analysis": {
-    "primary_cause": "Несоответствие формата данных между backend API и расширением VSCode",
-    "contributing_factors": [
-      "Backend возвращает поля в camelCase (projectId, functionalBlockId, createdAt, updatedAt)",
-      "Расширение ожидает поля в snake_case (project_id, functional_block_id, created_at, updated_at)",
-      "Backend возвращает статус 'Новая', но расширение группирует по статусам 'todo', 'in_progress', 'review', 'done', 'cancelled'",
-      "Отсутствует маппинг данных в ApiService.getTasks()"
-    ],
-    "impact": "Задачи не отображаются в Task Tree View несмотря на успешное получение данных с API"
-  },
-  "environment": {
-    "os": "Windows 10",
-    "vscode_version": "Latest", 
-    "extension_version": "0.4.6",
-    "backend_version": "Current"
-  },
-  "reproduction_steps": [
-    "1. Запустить backend и frontend",
-    "2. Установить расширение VSCode",
-    "3. Выбрать проект в Projects Tree View",
-    "4. Открыть Tasks Tree View",
-    "5. Наблюдать пустой список задач"
-  ],
-  "expected_behavior": "Задачи должны отображаться в Tasks Tree View, сгруппированные по статусам",
-  "actual_behavior": "Tasks Tree View пустой, задачи не отображаются",
-  "error_details": {
-    "api_response": "[{\"id\":\"aa5bcd84-6e65-403c-80f9-db7a6048eafd\",\"projectId\":\"a85cc341-f11a-492f-86eb-460f72640d95\",\"functionalBlockId\":null,\"number\":\"TASK-000001\",\"title\":\"1\",\"description\":\"1\",\"status\":\"Новая\",\"priority\":\"Средний\",\"type\":\"Новый функционал\",\"role\":\"\",\"result\":\"\",\"parentTaskId\":null,\"createdAt\":\"2025-06-21T17:45:58.64307Z\",\"updatedAt\":\"2025-06-21T17:45:58.64307Z\"}]",
-    "expected_format": "project_id, functional_block_id, created_at, updated_at в snake_case",
-    "data_mapping_issues": [
-      "projectId → project_id",
-      "functionalBlockId → functional_block_id", 
-      "createdAt → created_at",
-      "updatedAt → updated_at",
-      "parentTaskId → parent_task_id"
-    ],
-    "status_mapping_issues": [
-      "Backend 'Новая' → Extension 'todo'",
-      "Backend 'В работе' → Extension 'in_progress'",
-      "Backend 'На проверке' → Extension 'review'",
-      "Backend 'Завершена' → Extension 'done'",
-      "Backend 'Отменена' → Extension 'cancelled'"
+    "test_scenarios": [
+      "Выбор задачи из Task Tree View",
+      "Открытие деталей задачи",
+      "Проверка корректности отображаемых данных"
     ]
   },
-  "affected_files": [
-    "vscode-extension/src/services/ApiService.ts",
-    "vscode-extension/src/providers/TasksProvider.ts",
-    "vscode-extension/src/types/index.ts"
-  ],
-  "solution_approach": [
-    "1. Добавить маппинг данных в ApiService.getTasks()",
-    "2. Преобразовать camelCase в snake_case",
-    "3. Добавить маппинг статусов с русского на английский",
-    "4. Протестировать отображение задач"
-  ],
-  "test_scenarios": [
-    "Проверить загрузку всех задач",
-    "Проверить фильтрацию по проекту", 
-    "Проверить группировку по статусам",
-    "Проверить отображение в TreeView"
-  ],
-  "execution_report": {
-    "bugfix_pipeline_completed": true,
-    "execution_date": "2025-01-27T14:00:00Z",
-    "execution_summary": "Полностью выполнен bugfix pipeline из 6 этапов. Исправлена проблема несоответствия формата данных между backend API и расширением VSCode.",
-    "stages_completed": [
-      {
-        "stage": 1,
-        "name": "Анализ",
-        "status": "COMPLETED",
-        "description": "Проведен анализ согласно .cursor/rules/prompt_analyzeBug.mdc. Выявлена корневая причина: несоответствие форматов данных camelCase vs snake_case и маппинг статусов."
-      },
-      {
-        "stage": 2,
-        "name": "Генерация задачи",
-        "status": "COMPLETED", 
-        "description": "Создана задача B018_EXT.json с полным описанием проблемы, корневой причины и решения."
-      },
-      {
-        "stage": 3,
-        "name": "Выполнение",
-        "status": "COMPLETED",
-        "description": "Исправлены методы в ApiService: добавлен маппинг данных в getTasks(), созданы приватные методы mapTaskStatus(), mapTaskPriority(), mapTaskType(). Обновлена версия до 0.4.8."
-      },
-      {
-        "stage": 4,
-        "name": "Тестирование", 
-        "status": "COMPLETED",
-        "description": "Проведена компиляция (SUCCESS), создан VSIX пакет v0.4.8, протестирован API endpoint. Все тесты пройдены успешно."
-      },
-      {
-        "stage": 5,
-        "name": "Ревью кода",
-        "status": "COMPLETED",
-        "result": "SUCCESS",
-        "description": "Проведено ревью по чек-листу .cursor/rules/review.mdc. Все 12 критериев пройдены: нет hallucinated APIs, pipeline выполнен полностью, соблюдены принципы архитектуры."
-      },
-      {
-        "stage": 6,
-        "name": "Документация",
-        "status": "COMPLETED",
-        "description": "Создана техническая документация docs/Bugs/BUGFIX_B018_TASK_DATA_MAPPING.md согласно .cursor/rules/tech_docs.mdc с полным описанием решения."
-      }
-    ],
-    "technical_solution": {
-      "files_modified": [
-        "vscode-extension/src/services/ApiService.ts",
-        "vscode-extension/package.json"
-      ],
-      "methods_added": [
-        "mapTaskStatus()",
-        "mapTaskPriority()", 
-        "mapTaskType()"
-      ],
-      "key_changes": [
-        "Добавлен маппинг camelCase → snake_case в getTasks()",
-        "Реализован маппинг статусов 'Новая' → 'todo'",
-        "Реализован маппинг приоритетов 'Средний' → 'medium'",
-        "Реализован маппинг типов 'Новый функционал' → 'feature'",
-        "Добавлено логирование неизвестных значений с fallback"
-      ]
-    },
-    "testing_results": {
-      "compilation": "SUCCESS - 0 errors",
-      "package_creation": "SUCCESS - project-master-extension-0.4.8.vsix created",
-      "api_endpoint_test": "SUCCESS - API returns correct data structure",
-      "data_mapping_verification": "SUCCESS - camelCase fields properly mapped to snake_case"
-    },
-    "deliverables": {
-      "vsix_package": "project-master-extension-0.4.8.vsix",
-      "documentation": "docs/Bugs/BUGFIX_B018_TASK_DATA_MAPPING.md",
-      "version_update": "0.4.7 → 0.4.8"
-    },
-    "architectural_principles_applied": [
-      "Single Responsibility Principle - каждый метод маппинга отвечает за один тип преобразования",
-      "Open/Closed Principle - методы легко расширяются для новых значений",
-      "Defensive Programming - fallback значения с логированием",
-      "Separation of Concerns - маппинг изолирован в ApiService"
-    ],
-    "user_impact": {
-      "before": "Tasks Tree View пустой, задачи не отображаются",
-      "after": "Задачи корректно отображаются, сгруппированные по статусам"
-    },
-    "next_steps_for_user": [
-      "1. Закрыть VS Code полностью",
-      "2. Установить расширение: code --install-extension project-master-extension-0.4.8.vsix",
-      "3. Перезапустить VS Code", 
-      "4. Проверить отображение задач в Tasks Tree View"
-    ],
-    "performance_metrics": {
-      "bugfix_pipeline_duration": "~45 минут",
-      "compilation_time": "~5 секунд",
-      "package_size": "1.08MB (521 files)",
-      "zero_linter_errors": true
-    }
-  }
+  "created_at": "$(date '+%Y-%m-%d %H:%M:%S')",
+  "updated_at": "$(date '+%Y-%m-%d %H:%M:%S')"
 } 

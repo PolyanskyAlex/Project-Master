@@ -270,9 +270,42 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
         vscode.commands.executeCommand('projectMaster.tasks.create');
     });
 
-    // Enhanced open task command
-    const openTaskCommand = vscode.commands.registerCommand('projectMaster.openTask', async (task: Task) => {
-        vscode.commands.executeCommand('projectMaster.tasks.viewDetails', task);
+    // Enhanced open task command - fixed to handle task.id properly
+    const openTaskCommand = vscode.commands.registerCommand('projectMaster.openTask', async (taskOrId: Task | string | any) => {
+        try {
+                                                   logger.debug('openTask called with argument type: ' + typeof taskOrId);
+            
+            let task: Task;
+            
+            // Handle different argument types like in selectProject
+            if (typeof taskOrId === 'string') {
+                // Direct task ID
+                task = await deps.apiService.getTask(taskOrId);
+            } else if (taskOrId && typeof taskOrId === 'object') {
+                if (taskOrId.id && taskOrId.title) {
+                    // Full Task object
+                    task = taskOrId;
+                } else if (taskOrId.task && taskOrId.task.id) {
+                    // TaskTreeItem wrapper (similar to ProjectTreeItem)
+                    task = taskOrId.task;
+                } else {
+                    logger.error('Invalid task argument in openTask:', taskOrId);
+                    vscode.window.showErrorMessage('Invalid task selected. Please try again.');
+                    return;
+                }
+            } else {
+                logger.error('Invalid argument type in openTask: ' + typeof taskOrId);
+                vscode.window.showErrorMessage('Invalid task selected. Please try again.');
+                return;
+            }
+            
+            logger.info(`Opening task: ${task.title} (ID: ${task.id})`);
+            vscode.commands.executeCommand('projectMaster.tasks.viewDetails', task);
+            
+        } catch (error) {
+            logger.error('Failed to open task', error);
+            vscode.window.showErrorMessage('Failed to open task. Please check your API connection.');
+        }
     });
 
     // Enhanced web UI command
