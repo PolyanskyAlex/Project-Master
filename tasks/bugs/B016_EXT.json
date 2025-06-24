@@ -1,7 +1,7 @@
 {
   "id": "B016_EXT",
   "title": "Циклические ссылки при выборе проекта в расширении",
-  "description": "При выборе проекта в Tree View расширения возникают ошибки: 'An object could not be cloned' и 'Maximum call stack size exceeded' из-за бесконечной рекурсии между командами selectProject и projectSelected",
+  "description": "Комплексная критическая ошибка при выборе проекта: 1) Циклические ссылки между командами, 2) API data mapping issues, 3) Неправильная обработка ProjectTreeItem объектов",
   "priority": "CRITICAL",
   "type": "bug",
   "status": "COMPLETED",
@@ -41,7 +41,7 @@
   "testing": {
     "compilation": "SUCCESS",
     "package_creation": "SUCCESS - 518 files, 1.07MB",
-    "vsix_version": "project-master-extension-0.4.5.vsix"
+    "vsix_version": "project-master-extension-0.4.6.vsix"
   },
   "prevention": {
     "patterns": [
