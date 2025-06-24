@@ -101,9 +101,27 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
             
             logger.info(`Selecting project: ${project.name}`);
             
-            // Fix: Use event system to prevent circular reference - only emit projectSelected event
-            // The actual selection logic is handled in extension.ts
-            vscode.commands.executeCommand('projectMaster.projectSelected', project.id);
+            // Fix: Directly coordinate the selection without circular command calls
+            // Update all providers directly to avoid circular reference issues
+            projectsProvider.setSelectedProject(project);
+            tasksProvider.setSelectedProject(project);
+            planProvider.setSelectedProject(project);
+            
+            // Update tree view titles
+            const tasksTreeView = vscode.window.createTreeView('projectMaster.tasks', {
+                treeDataProvider: tasksProvider,
+                showCollapseAll: true,
+                canSelectMany: false
+            });
+            
+            const planTreeView = vscode.window.createTreeView('projectMaster.plan', {
+                treeDataProvider: planProvider,
+                showCollapseAll: true,
+                canSelectMany: false
+            });
+            
+            tasksTreeView.title = `Tasks - ${project.name}`;
+            planTreeView.title = `Plan - ${project.name}`;
             
             // Show success message with quick actions
             vscode.window.showInformationMessage(

@@ -87,11 +87,14 @@ export function activate(context: vscode.ExtensionContext) {
             // Fix: Get project object by ID to prevent circular reference issues
             const project = projectsProvider.getProjectById(projectId);
             if (project) {
-                // Update all providers with selected project
-                projectsProvider.selectProject(project);
+                // Fix: Use setSelectedProject to avoid circular calls
+                // Only update the UI state without triggering events
+                projectsProvider.setSelectedProject(project);
                 tasksProvider.setSelectedProject(project);
                 planProvider.setSelectedProject(project);
                 updateTreeViewTitles();
+                
+                logger.info(`Project selection updated: ${project.name}`);
             } else {
                 logger.warn(`Project with ID ${projectId} not found`);
             }

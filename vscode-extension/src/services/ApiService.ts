@@ -187,6 +187,82 @@ export class ApiService implements IApiService {
         }
     }
 
+    private mapTaskStatus(status: string): 'todo' | 'in_progress' | 'review' | 'done' | 'cancelled' {
+        switch (status?.toLowerCase()) {
+            case 'новая':
+            case 'к выполнению':
+            case 'todo':
+                return 'todo';
+            case 'в работе':
+            case 'in_progress':
+                return 'in_progress';
+            case 'на проверке':
+            case 'проверка':
+            case 'review':
+                return 'review';
+            case 'завершена':
+            case 'готово':
+            case 'done':
+                return 'done';
+            case 'отменена':
+            case 'отклонена':
+            case 'cancelled':
+                return 'cancelled';
+            default:
+                this.logger.warn(`Unknown task status: ${status}, defaulting to 'todo'`);
+                return 'todo';
+        }
+    }
+
+    private mapTaskPriority(priority: string): 'low' | 'medium' | 'high' | 'critical' {
+        switch (priority?.toLowerCase()) {
+            case 'низкий':
+            case 'low':
+                return 'low';
+            case 'средний':
+            case 'medium':
+                return 'medium';
+            case 'высокий':
+            case 'high':
+                return 'high';
+            case 'критический':
+            case 'critical':
+                return 'critical';
+            default:
+                this.logger.warn(`Unknown task priority: ${priority}, defaulting to 'medium'`);
+                return 'medium';
+        }
+    }
+
+    private mapTaskType(type: string): 'feature' | 'bug' | 'improvement' | 'documentation' | 'test' {
+        switch (type?.toLowerCase()) {
+            case 'новый функционал':
+            case 'функция':
+            case 'feature':
+                return 'feature';
+            case 'ошибка':
+            case 'баг':
+            case 'bug':
+                return 'bug';
+            case 'улучшение':
+            case 'рефакторинг':
+            case 'improvement':
+                return 'improvement';
+            case 'документация':
+            case 'documentation':
+                return 'documentation';
+            case 'тест':
+            case 'тестирование':
+            case 'test':
+                return 'test';
+            case 'задача':
+            case 'task':
+            default:
+                this.logger.warn(`Unknown task type: ${type}, defaulting to 'feature'`);
+                return 'feature';
+        }
+    }
+
     async getProject(id: string): Promise<Project> {
         try {
             const response: AxiosResponse<Project> = await this.client.get(`/api/v1/projects/${id}`);
@@ -211,8 +287,25 @@ export class ApiService implements IApiService {
     async getTasks(projectId?: string): Promise<Task[]> {
         try {
             const url = projectId ? `/api/v1/tasks?project_id=${projectId}` : '/api/v1/tasks';
-            const response: AxiosResponse<Task[]> = await this.client.get(url);
-            return response.data;
+            const response: AxiosResponse<any[]> = await this.client.get(url);
+            
+            // Map API response (camelCase) to extension types (snake_case)
+            return response.data.map((task: any) => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                status: this.mapTaskStatus(task.status),
+                priority: this.mapTaskPriority(task.priority),
+                type: this.mapTaskType(task.type),
+                project_id: task.projectId,
+                assignee: task.assignedTo || null, // Backend doesn't have this field
+                due_date: task.dueDate || null, // Backend doesn't have this field
+                created_at: task.createdAt,
+                updated_at: task.updatedAt,
+                estimated_hours: task.estimatedHours || null, // Backend doesn't have this field
+                actual_hours: task.actualHours || null, // Backend doesn't have this field
+                tags: task.tags || [] // Backend doesn't have this field
+            }));
         } catch (error) {
             this.logger.error('Failed to fetch tasks', error);
             throw error;
@@ -221,8 +314,26 @@ export class ApiService implements IApiService {
 
     async getTask(id: string): Promise<Task> {
         try {
-            const response: AxiosResponse<ApiResponse<Task>> = await this.client.get(`/api/v1/tasks/${id}`);
-            return response.data.data;
+            const response: AxiosResponse<any> = await this.client.get(`/api/v1/tasks/${id}`);
+            
+            // Map API response (like in getTasks) from camelCase to snake_case
+            const task = response.data;
+            return {
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                status: this.mapTaskStatus(task.status),
+                priority: this.mapTaskPriority(task.priority),
+                type: this.mapTaskType(task.type),
+                project_id: task.projectId,
+                assignee: task.assignedTo || null, // Backend doesn't have this field
+                due_date: task.dueDate || null, // Backend doesn't have this field  
+                created_at: task.createdAt,
+                updated_at: task.updatedAt,
+                estimated_hours: task.estimatedHours || null, // Backend doesn't have this field
+                actual_hours: task.actualHours || null, // Backend doesn't have this field
+                tags: task.tags || [] // Backend doesn't have this field
+            };
         } catch (error) {
             this.logger.error(`Failed to fetch task ${id}`, error);
             throw error;
@@ -413,4 +524,4 @@ export class ApiService implements IApiService {
             return false;
         }
     }
-} 
+}

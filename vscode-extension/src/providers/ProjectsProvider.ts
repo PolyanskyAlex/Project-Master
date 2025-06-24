@@ -33,13 +33,17 @@ export class ProjectsProvider implements vscode.TreeDataProvider<ProjectTreeItem
     }
 
     selectProject(project: Project): void {
+        this.setSelectedProject(project);
+        
+        // Notify other components about project selection
+        // Note: This will be handled by the external command flow
+        this.logger.info(`Project selected: ${project.name}`);
+    }
+
+    // Internal method to set selected project without triggering external events
+    setSelectedProject(project: Project): void {
         this.selectedProject = project;
         this._onDidChangeTreeData.fire();
-        
-        // Notify other providers about project selection
-        // Fix: Pass only project ID to prevent circular reference serialization errors
-        vscode.commands.executeCommand('projectMaster.projectSelected', project.id);
-        this.logger.info(`Project selected: ${project.name}`);
     }
 
     getSelectedProject(): Project | null {

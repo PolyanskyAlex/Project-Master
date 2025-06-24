@@ -22,7 +22,7 @@ alwaysApply: false
     },
     {
       "name": "context7",
-      "description": "Проверь код и архитектуру на соответствие context7",
+      "description": "Проверь код и архитектуру на соответствие `CONTEXT7` по MCP.",
       "importance": "critical",
       "pattern": ".*",
       "category": "codearch"
@@ -43,7 +43,7 @@ alwaysApply: false
     },
     {
       "name": "Enforce consistent naming",
-      "description": "Именование переменных, функций и классов должно быть логичным и согласованным во всём коде. Без автогенерированных аббревиатур.",
+      "description": "Именование переменных, функций и классов должно быть логичным и согласованным во всём коде в формате camelCase. Без автогенерированных аббревиатур.",
       "importance": "high",
       "pattern": ".*",
       "category": "Style"
@@ -92,14 +92,14 @@ alwaysApply: false
     },
     {
       "name": "Technical documentation completeness",
-      "description": "Проверь, что создана/обновлена техническая документация согласно .cursor/rules/tech_docs.mdc. API документация, архитектурные схемы, инструкции по настройке должны быть актуальными.",
+      "description": "Проверь, что создана/обновлена техническая документация согласно `.cursor/rules/tech_docs.mdc`. API документация, архитектурные схемы, инструкции по настройке должны быть актуальными.",
       "importance": "high",
       "pattern": ".*",
       "category": "Documentation"
     },
     {
       "name": "User documentation quality",
-      "description": "Убедись, что пользовательская документация понятна целевой аудитории. Инструкции должны быть пошаговыми, с примерами использования.",
+      "description": "Убедись, что пользовательская документация соответствует`.cursor\rules\user_docs.mdc`.",
       "importance": "medium",
       "pattern": ".*",
       "category": "Documentation"

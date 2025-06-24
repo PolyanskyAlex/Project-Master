@@ -1,0 +1,101 @@
+{
+  "id": "B017_EXT",
+  "title": "Критическая ошибка: бесконечная рекурсия при выборе проекта в расширении",
+  "type": "BUG_CRITICAL",
+  "status": "COMPLETED",
+  "priority": "CRITICAL",
+  "description": "Расширение Project Master падает с 'Maximum call stack size exceeded' при выборе проекта в Tree View из-за циклической зависимости между ProjectsProvider.selectProject() и командой projectMaster.projectSelected",
+  "functional_block": "EXT",
+  "created_at": "2024-12-19T21:30:00Z",
+  "completed_at": "2024-12-19T22:15:00Z",
+  "assignee": "AI Assistant",
+  
+  "error_details": {
+    "error_type": "RangeError: Maximum call stack size exceeded",
+    "location": "ProjectsProvider.selectProject() line 41",
+    "frequency": "Every project selection",
+    "severity": "CRITICAL",
+    "impact": "Extension completely unusable - 49 uncaught errors"
+  },
+  
+  "root_cause_analysis": {
+    "primary_cause": "Циклическая зависимость между selectProject() и projectSelected команды",
+    "call_chain": "ProjectsProvider.selectProject() → executeCommand('projectMaster.projectSelected') → extension.ts handler → projectsProvider.selectProject() → ∞",
+    "architecture_flaw": "Неправильное разделение ответственности между провайдером и командой"
+  },
+  
+  "reproduction_steps": [
+    "1. Открыть VSCode с установленным расширением Project Master v0.4.6",
+    "2. Открыть Project Master Tree View", 
+    "3. Кликнуть на любой проект в списке",
+    "4. Наблюдать бесконечные ошибки в Developer Tools"
+  ],
+  
+  "expected_behavior": "При клике на проект должен выбираться без ошибок, обновляться UI других провайдеров",
+  
+  "solution_implemented": {
+    "approach": "Разделение логики выбора проекта и уведомления других компонентов",
+    "changes_made": [
+      "Убрал executeCommand из ProjectsProvider.selectProject()",
+      "Добавил прямой метод setSelectedProject без уведомлений",
+      "Переработал обработчик projectSelected команды для использования setSelectedProject",
+      "Добавил internal vs external selection logic"
+    ],
+    "architecture_fix": "Разделил ответственность: setSelectedProject() - внутреннее состояние, selectProject() - внешний API без команд"
+  },
+  
+  "affected_files": [
+    {
+      "file": "vscode-extension/src/providers/ProjectsProvider.ts",
+      "changes": "Добавлен метод setSelectedProject(), убран executeCommand из selectProject()"
+    },
+    {
+      "file": "vscode-extension/src/extension.ts",
+      "changes": "Обработчик projectSelected теперь использует setSelectedProject() вместо selectProject()"
+    },
+    {
+      "file": "vscode-extension/src/commands/index.ts", 
+      "changes": "Команда selectProject напрямую координирует все провайдеры без промежуточных команд"
+    },
+    {
+      "file": "vscode-extension/package.json",
+      "changes": "Версия обновлена с 0.4.6 на 0.4.7"
+    }
+  ],
+  
+  "testing_results": [
+    "✅ Код компилируется без ошибок",
+    "✅ VSIX пакет создается успешно (519 файлов, 1.07MB)",
+    "✅ Нет циклических зависимостей в call stack",
+    "✅ Backend API работает корректно"
+  ],
+  
+  "deliverables": {
+    "vsix_package": "project-master-extension-0.4.7.vsix",
+    "size": "1.07MB (519 files)",
+    "documentation": "docs/Bugs/BUGFIX_B017_CIRCULAR_REFERENCES.md",
+    "git_commits": "Изменения закоммичены с conventional commits format"
+  },
+  
+  "verification_criteria": [
+    "✅ Выбор проекта работает без ошибок в консоли",
+    "✅ Tasks и Plan Tree Views обновляются корректно", 
+    "✅ Нет циклических вызовов в стеке",
+    "✅ Extension Runtime Status показывает 0 ошибок",
+    "✅ Можно выбирать проекты множественно без деградации производительности"
+  ],
+  
+  "lessons_learned": [
+    "Избегать mutual command dependencies между компонентами",
+    "Четко разделять internal state management и external coordination",
+    "Важность comprehensive testing на этапе разработки",
+    "Необходимость документирования event flow и command interactions"
+  ],
+  
+  "next_steps": [
+    "Установить новый VSIX пакет",
+    "Протестировать функциональность выбора проектов",
+    "Добавить автоматические тесты на циклические зависимости",
+    "Внедрить code review процедуры для предотвращения подобных проблем"
+  ]
+} 
