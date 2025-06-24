@@ -1,0 +1,27 @@
+{
+  "task_number": ">>>ЗАДАЧА<<< T-EXEC-003: Интеграция с системой комментариев Project Master",
+  "status": "Выполнена", 
+  "dependencies": ["T-EXEC-001", "T-EXEC-002"],
+  "priority": "Средний",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Полная интеграция выполнения задач с системой комментариев Project Master для логирования процесса выполнения и результатов",
+    "schemas": "Comment API integration, execution logging, progress tracking",
+    "task_goal": "Обеспечить полную трассируемость выполнения задач через систему комментариев",
+    "expected_result": "Автоматическое логирование всех этапов выполнения задач в Project Master"
+  },
+  "commit": {
+    "requirement": "Все изменения должны быть оформлены отдельными коммитами с четким описанием",
+    "template": "feat(comments-integration): {subject}\\n\\n{body}\\n\\nCloses: #T-EXEC-003"
+  },
+  "dockerization_requirements": {
+    "required": false,
+    "dockerfile_path": null,
+    "best_practices": ["Обеспечить совместимость с существующей Docker-средой Project Master"]
+  },
+  "subtasks_count": 2,
+  "subtasks_list": [
+    "T-EXEC-003.1: Автоматическое логирование в комментарии",
+    "T-EXEC-003.2: Отображение комментариев в интерфейсах"
+  ]
+} 

@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-004.1: Integration тесты",
+  "status": "Ожидание",
+  "dependencies": [],
+  "priority": "Критический",
+  "responsible": "AI-DevOps-Agent",
+  "detailed_description": {
+    "process_logic": "Создание интеграционных тестов для проверки взаимодействия всех компонентов системы выполнения задач",
+    "schemas": "Integration test suites, API testing, WebSocket testing",
+    "code_reference": "tests/integration/task-execution/",
+    "task_goal": "Обеспечить корректность интеграции всех компонентов",
+    "expected_result": "Полный набор интеграционных тестов с покрытием >90%",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Созданы интеграционные тесты для всех API endpoints",
+    "Добавлены тесты WebSocket соединений",
+    "Реализованы тесты взаимодействия между интерфейсами",
+    "Покрытие интеграционными тестами составляет >90%",
+    "Тесты интегрированы в CI/CD pipeline",
+    "Все тесты проходят успешно",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

@@ -1,0 +1,25 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-002.3: Кнопки и context menu в расширении VS Code",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-002.1"],
+  "priority": "Высокий", 
+  "responsible": "AI-Frontend-Agent",
+  "detailed_description": {
+    "process_logic": "Добавление кнопок выполнения в Tree View задач, context menu с опциями выполнения и inline команд",
+    "schemas": "TasksProvider updates, context menu contributions, TaskExecutionCommands",
+    "code_reference": "vscode-extension/src/providers/TasksProvider.ts, vscode-extension/package.json, vscode-extension/src/commands/taskExecutionCommands.ts",
+    "task_goal": "Обеспечить множественные способы запуска выполнения задач из расширения",
+    "expected_result": "Интуитивный UI с кнопками, context menu и быстрыми командами",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Добавлены кнопки выполнения в TaskItem элементы",
+    "Реализован context menu с опциями выполнения",
+    "Созданы команды для различных режимов выполнения",
+    "Добавлены QuickPick интерфейсы для выбора опций",
+    "Реализована интеграция с TaskExecutionService",
+    "Unit-тесты покрывают все новые команды",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

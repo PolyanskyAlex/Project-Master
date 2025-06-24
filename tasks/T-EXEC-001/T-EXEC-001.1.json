@@ -1,0 +1,23 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-001.1: Создание TaskSearchEngine",
+  "status": "Выполнена",
+  "dependencies": [],
+  "priority": "Высокий",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Реализация интеллектуальной системы поиска задач с поддержкой нечеткого поиска, поиска по ID, названию, описанию и тегам",
+    "schemas": "interface TaskSearchEngine { findById, findByTitle, findByKeywords, smartSearch }",
+    "code_reference": "vscode-extension/src/services/TaskSearchEngine.ts",
+    "task_goal": "Создать гибкую систему поиска задач в Project Master",
+    "expected_result": "Класс TaskSearchEngine с методами многоуровневого поиска",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Класс TaskSearchEngine создан с всеми методами поиска",
+    "Реализован нечеткий поиск с поддержкой частичных совпадений",
+    "Добавлены методы поиска по ID, названию, описанию и тегам",
+    "Unit-тесты написаны и покрывают >80% новой логики",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

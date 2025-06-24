@@ -1,0 +1,25 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-002.2: Кнопки выполнения в веб-интерфейсе",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-002.1"],
+  "priority": "Высокий",
+  "responsible": "AI-Frontend-Agent",
+  "detailed_description": {
+    "process_logic": "Добавление кнопок 'Execute in Cursor' в TaskTable компонент с анимацией, состояниями загрузки и обработкой ошибок",
+    "schemas": "TaskTable.tsx updates, CursorCommandService.ts, WebSocket integration",
+    "code_reference": "frontend/src/components/TaskTable.tsx, frontend/src/services/cursorCommandService.ts",
+    "task_goal": "Обеспечить UI для отправки команд выполнения из веб-интерфейса",
+    "expected_result": "Интерактивные кнопки с отслеживанием статуса выполнения",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Кнопки добавлены в TaskTable с соответствующими состояниями",
+    "Реализован CursorCommandService для отправки команд",
+    "Добавлена WebSocket интеграция для real-time обновлений",
+    "Реализована обработка ошибок и уведомления пользователя",
+    "Добавлены анимации и индикаторы прогресса",
+    "Unit-тесты покрывают новый функционал",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

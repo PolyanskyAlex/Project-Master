@@ -1,0 +1,23 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-001.4: Стратегии выполнения задач",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-001.3"],
+  "priority": "Высокий",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Реализация паттерна Strategy для различных типов задач: bug fixes, features, documentation, testing",
+    "schemas": "interface TaskExecutionStrategy { canHandle, execute }, class BugFixStrategy, FeatureStrategy, etc.",
+    "code_reference": "vscode-extension/src/strategies/",
+    "task_goal": "Обеспечить специализированное выполнение разных типов задач",
+    "expected_result": "Набор стратегий выполнения с автоматическим выбором подходящей",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Созданы стратегии для основных типов задач (bug, feature, documentation, test)",
+    "Реализован автоматический выбор стратегии на основе типа задачи",
+    "Каждая стратегия имеет специализированную логику выполнения",
+    "Unit-тесты покрывают все стратегии",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

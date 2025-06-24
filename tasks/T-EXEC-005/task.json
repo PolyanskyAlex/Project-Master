@@ -1,0 +1,32 @@
+{
+  "task_number": ">>>ЗАДАЧА<<< T-EXEC-005: Развертывание и мониторинг",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-004"],
+  "priority": "Высокий",
+  "responsible": "AI-DevOps-Agent",
+  "detailed_description": {
+    "process_logic": "Настройка production развертывания функционала выполнения задач с мониторингом, логированием и системами alerting",
+    "schemas": "Production deployment, monitoring setup, alerting configuration",
+    "task_goal": "Обеспечить стабильное production развертывание с полным мониторингом",
+    "expected_result": "Production-ready развертывание с мониторингом и alerting"
+  },
+  "commit": {
+    "requirement": "Все изменения должны быть оформлены отдельными коммитами с четким описанием",
+    "template": "deploy(task-execution): {subject}\\n\\n{body}\\n\\nCloses: #T-EXEC-005"
+  },
+  "dockerization_requirements": {
+    "required": true,
+    "dockerfile_path": "docker-compose.prod.yml",
+    "best_practices": [
+      "Настроить production оптимизированные Docker образы",
+      "Добавить health checks для всех сервисов",
+      "Настроить логирование и мониторинг в Docker"
+    ]
+  },
+  "subtasks_count": 3,
+  "subtasks_list": [
+    "T-EXEC-005.1: Production конфигурация",
+    "T-EXEC-005.2: Мониторинг и логирование",
+    "T-EXEC-005.3: CI/CD pipeline обновления"
+  ]
+} 

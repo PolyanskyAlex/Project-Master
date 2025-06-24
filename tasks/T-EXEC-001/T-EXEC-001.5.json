@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-001.5: Интеграция с командами расширения",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-001.3", "T-EXEC-001.4"],
+  "priority": "Высокий",
+  "responsible": "AI-Frontend-Agent",
+  "detailed_description": {
+    "process_logic": "Регистрация новых команд в VS Code расширении для выполнения задач через Command Palette",
+    "schemas": "vscode.commands.registerCommand('projectMaster.executeTask'), Command Palette integration",
+    "code_reference": "vscode-extension/src/commands/taskExecutionCommands.ts, vscode-extension/package.json",
+    "task_goal": "Обеспечить доступ к функционалу выполнения задач через интерфейс VS Code",
+    "expected_result": "Зарегистрированные команды с UI для выбора и выполнения задач",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Команды зарегистрированы в package.json и extension.ts",
+    "Реализован UI для выбора задач через QuickPick",
+    "Добавлены подтверждения и прогресс-индикаторы",
+    "Команды интегрированы с TaskExecutionService",
+    "Unit-тесты написаны для команд",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

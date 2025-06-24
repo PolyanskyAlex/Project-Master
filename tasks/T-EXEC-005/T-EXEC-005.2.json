@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-005.2: Мониторинг и логирование",
+  "status": "Ожидание",
+  "dependencies": ["T-EXEC-005.1"],
+  "priority": "Высокий",
+  "responsible": "AI-DevOps-Agent",
+  "detailed_description": {
+    "process_logic": "Настройка системы мониторинга производительности, логирования ошибок и метрик выполнения задач",
+    "schemas": "Monitoring setup, logging configuration, metrics collection",
+    "code_reference": "monitoring/prometheus.yml, monitoring/grafana/",
+    "task_goal": "Обеспечить полный мониторинг системы выполнения задач",
+    "expected_result": "Функциональная система мониторинга с dashboards и alerting",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Настроен Prometheus для сбора метрик",
+    "Созданы Grafana dashboards для мониторинга",
+    "Настроено логирование ошибок и событий",
+    "Добавлены алерты для критических событий",
+    "Протестирована система мониторинга",
+    "Создана документация по мониторингу",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

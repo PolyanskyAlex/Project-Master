@@ -1,0 +1,34 @@
+{
+  "task_number": ">>>ЗАДАЧА<<< T-EXEC-002: Система кнопок выполнения задач в интерфейсах",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-001"],
+  "priority": "Высокий",
+  "responsible": "AI-Frontend-Agent",
+  "detailed_description": {
+    "process_logic": "Создание системы кнопок для отправки команд выполнения задач агенту из веб-интерфейса и расширения VS Code с real-time отслеживанием статуса",
+    "schemas": "CursorCommandService, CommandPollingService, WebSocket notifications, Task execution buttons",
+    "task_goal": "Обеспечить удобный способ запуска выполнения задач из любого интерфейса",
+    "expected_result": "Интегрированная система кнопок с двунаправленной коммуникацией и отслеживанием статуса"
+  },
+  "commit": {
+    "requirement": "Все изменения должны быть оформлены отдельными коммитами с четким описанием",
+    "template": "feat(task-buttons): {subject}\\n\\n{body}\\n\\nCloses: #T-EXEC-002"
+  },
+  "dockerization_requirements": {
+    "required": true,
+    "dockerfile_path": "backend/Dockerfile, frontend/Dockerfile",
+    "best_practices": [
+      "Обновить docker-compose.yml для поддержки новых API endpoints",
+      "Обеспечить совместимость WebSocket соединений в Docker среде",
+      "Добавить переменные окружения для конфигурации polling"
+    ]
+  },
+  "subtasks_count": 5,
+  "subtasks_list": [
+    "T-EXEC-002.1: Backend API для команд выполнения",
+    "T-EXEC-002.2: Кнопки выполнения в веб-интерфейсе",
+    "T-EXEC-002.3: Кнопки и context menu в расширении VS Code",
+    "T-EXEC-002.4: Система опроса команд в расширении",
+    "T-EXEC-002.5: WebSocket интеграция для real-time обновлений"
+  ]
+} 

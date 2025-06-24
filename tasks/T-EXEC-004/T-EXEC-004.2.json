@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-004.2: E2E тесты пользовательских сценариев",
+  "status": "Ожидание",
+  "dependencies": ["T-EXEC-004.1"],
+  "priority": "Высокий",
+  "responsible": "AI-DevOps-Agent",
+  "detailed_description": {
+    "process_logic": "Создание E2E тестов для полных пользовательских сценариев выполнения задач от поиска до завершения",
+    "schemas": "E2E test scenarios, user workflow testing, cross-interface testing",
+    "code_reference": "tests/e2e/task-execution-workflows/",
+    "task_goal": "Проверить работоспособность полных пользовательских сценариев",
+    "expected_result": "Автоматизированные E2E тесты для всех основных сценариев",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Созданы E2E тесты для поиска и выполнения задач",
+    "Добавлены тесты кнопок выполнения из веб-интерфейса",
+    "Реализованы тесты команд из расширения VS Code",
+    "Протестированы сценарии с ошибками и edge cases",
+    "Тесты запускаются в изолированной Docker среде",
+    "Все E2E тесты проходят успешно",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

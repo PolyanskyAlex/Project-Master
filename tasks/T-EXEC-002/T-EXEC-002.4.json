@@ -1,0 +1,25 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-002.4: Система опроса команд в расширении",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-002.1"],
+  "priority": "Высокий",
+  "responsible": "AI-Frontend-Agent",
+  "detailed_description": {
+    "process_logic": "Реализация CommandPollingService для получения команд от Project Master и их выполнения в фоновом режиме",
+    "schemas": "class CommandPollingService { startPolling, stopPolling, checkForCommands, processCommand }",
+    "code_reference": "vscode-extension/src/services/CommandPollingService.ts",
+    "task_goal": "Обеспечить автоматическое получение и выполнение команд от Project Master",
+    "expected_result": "Сервис опроса с обработкой различных типов команд",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Создан CommandPollingService с настраиваемым интервалом опроса",
+    "Реализована обработка команд execute_task, schedule_task, cancel_task",
+    "Добавлено обновление статуса команд в Project Master",
+    "Реализована обработка ошибок и уведомления пользователя",
+    "Сервис интегрирован в основной цикл расширения",
+    "Unit-тесты покрывают все сценарии опроса",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

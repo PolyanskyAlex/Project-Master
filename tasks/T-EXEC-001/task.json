@@ -1,0 +1,30 @@
+{
+  "task_number": ">>>ЗАДАЧА<<< T-EXEC-001: Архитектура поиска и выполнения задач агентом",
+  "status": "Выполнена",
+  "dependencies": [],
+  "priority": "Критический",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Создание системы поиска задач в Project Master БД с последующим выполнением найденной задачи агентом. Включает парсинг команд, интеллектуальный поиск, анализ контекста и выбор стратегии выполнения.",
+    "schemas": "TaskSearchEngine, TaskExecutionService, TaskExecutionStrategy, ParsedTaskCommand",
+    "task_goal": "Обеспечить возможность выполнения задач агентом по команде с автоматическим поиском в Project Master",
+    "expected_result": "Полнофункциональная система поиска и выполнения задач с интеграцией в Project Master API"
+  },
+  "commit": {
+    "requirement": "Все изменения должны быть оформлены отдельными коммитами с четким описанием",
+    "template": "feat(task-execution): {subject}\\n\\n{body}\\n\\nCloses: #T-EXEC-001"
+  },
+  "dockerization_requirements": {
+    "required": false,
+    "dockerfile_path": null,
+    "best_practices": ["Обеспечить совместимость с существующей Docker-средой Project Master"]
+  },
+  "subtasks_count": 5,
+  "subtasks_list": [
+    "T-EXEC-001.1: Создание TaskSearchEngine",
+    "T-EXEC-001.2: Парсер команд выполнения задач",
+    "T-EXEC-001.3: TaskExecutionService",
+    "T-EXEC-001.4: Стратегии выполнения задач",
+    "T-EXEC-001.5: Интеграция с командами расширения"
+  ]
+} 

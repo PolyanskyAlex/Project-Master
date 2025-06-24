@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-003.2: Отображение комментариев в интерфейсах",
+  "status": "Ожидание",
+  "dependencies": ["T-EXEC-003.1"],
+  "priority": "Средний",
+  "responsible": "AI-Frontend-Agent",
+  "detailed_description": {
+    "process_logic": "Создание UI компонентов для отображения комментариев выполнения в веб-интерфейсе и расширении VS Code",
+    "schemas": "CommentsPanel component, comment rendering, real-time updates",
+    "code_reference": "frontend/src/components/CommentsPanel.tsx, vscode-extension/src/views/TaskDetailsView.ts",
+    "task_goal": "Обеспечить удобный просмотр истории выполнения задач",
+    "expected_result": "Интерфейсы для просмотра комментариев с real-time обновлениями",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Создан компонент CommentsPanel в веб-интерфейсе",
+    "Реализован просмотр комментариев в расширении VS Code",
+    "Добавлены real-time обновления комментариев",
+    "Реализована фильтрация комментариев по типу",
+    "Unit-тесты покрывают компоненты комментариев",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-005.1: Production конфигурация",
+  "status": "Ожидание",
+  "dependencies": [],
+  "priority": "Критический",
+  "responsible": "AI-DevOps-Agent",
+  "detailed_description": {
+    "process_logic": "Настройка production конфигураций, переменных окружения, секретов и оптимизация производительности",
+    "schemas": "Production configs, environment variables, secrets management",
+    "code_reference": "docker-compose.prod.yml, .env.prod, kubernetes/",
+    "task_goal": "Подготовить систему к production развертыванию",
+    "expected_result": "Готовая production конфигурация с оптимизациями",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Создана production конфигурация Docker Compose",
+    "Настроены переменные окружения и секреты",
+    "Добавлены оптимизации производительности",
+    "Настроены health checks для всех сервисов",
+    "Протестировано развертывание в staging среде",
+    "Документирована процедура развертывания",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

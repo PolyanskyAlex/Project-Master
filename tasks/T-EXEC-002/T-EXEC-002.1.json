@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-002.1: Backend API для команд выполнения",
+  "status": "Выполнена",
+  "dependencies": [],
+  "priority": "Критический",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Создание REST API endpoints для приема команд выполнения задач и WebSocket для real-time уведомлений",
+    "schemas": "POST /api/v1/cursor-commands, GET /api/v1/cursor-commands/pending, PUT /api/v1/cursor-commands/{id}, WebSocket /ws/task-execution",
+    "code_reference": "backend/handlers/cursor_command_handler.go, backend/handlers/websocket_handler.go",
+    "task_goal": "Обеспечить API для коммуникации между интерфейсами и агентом",
+    "expected_result": "Функциональные API endpoints с WebSocket поддержкой",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Созданы все необходимые API endpoints",
+    "Реализована WebSocket поддержка для real-time уведомлений",
+    "Добавлена валидация входных данных и аутентификация",
+    "Реализована система очередей команд",
+    "Unit-тесты покрывают все endpoints",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

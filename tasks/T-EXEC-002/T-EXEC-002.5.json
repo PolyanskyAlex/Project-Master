@@ -1,0 +1,25 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-002.5: WebSocket интеграция для real-time обновлений",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-002.1", "T-EXEC-002.2"],
+  "priority": "Средний",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Настройка WebSocket соединений между веб-интерфейсом, backend и расширением для мгновенных обновлений статуса выполнения",
+    "schemas": "WebSocket handlers, real-time notifications, connection management",
+    "code_reference": "backend/handlers/websocket_handler.go, frontend/src/services/websocketService.ts",
+    "task_goal": "Обеспечить мгновенные обновления статуса во всех интерфейсах",
+    "expected_result": "Функциональная система real-time уведомлений",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "WebSocket сервер настроен в backend",
+    "Клиенты подключаются и получают уведомления",
+    "Реализована система подписок на события задач",
+    "Добавлено управление соединениями и переподключение",
+    "Интеграция протестирована во всех интерфейсах",
+    "Unit-тесты покрывают WebSocket функционал",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

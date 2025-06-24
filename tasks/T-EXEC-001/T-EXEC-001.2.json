@@ -1,0 +1,23 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-001.2: Парсер команд выполнения задач",
+  "status": "Выполнена",
+  "dependencies": [],
+  "priority": "Высокий",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Создание парсера для интерпретации команд вида 'Выполнить задачу X' с извлечением идентификаторов, типов и контекста",
+    "schemas": "interface ParsedTaskCommand { type, query, projectId?, priority?, status? }",
+    "code_reference": "vscode-extension/src/utils/TaskCommandParser.ts",
+    "task_goal": "Обеспечить точное понимание команд пользователя для поиска задач",
+    "expected_result": "Класс TaskCommandParser с методами парсинга различных форматов команд",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Парсер поддерживает команды по ID, названию и смешанному поиску",
+    "Реализована обработка команд с контекстом проекта",
+    "Добавлена валидация входных данных",
+    "Unit-тесты покрывают все варианты команд",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

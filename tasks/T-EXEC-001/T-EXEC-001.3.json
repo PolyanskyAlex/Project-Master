@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-001.3: TaskExecutionService",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-001.1", "T-EXEC-001.2"],
+  "priority": "Критический",
+  "responsible": "AI-Backend-Agent",
+  "detailed_description": {
+    "process_logic": "Основной сервис выполнения задач с интеграцией поиска, анализа типа задачи и выбора стратегии выполнения",
+    "schemas": "class TaskExecutionService { findTask, analyzeTaskType, executeTask, updateTaskStatus }",
+    "code_reference": "vscode-extension/src/services/TaskExecutionService.ts",
+    "task_goal": "Создать центральный сервис управления выполнением задач",
+    "expected_result": "Полнофункциональный сервис выполнения задач с интеграцией в Project Master",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Сервис интегрирован с TaskSearchEngine и API Project Master",
+    "Реализованы методы поиска, анализа и выполнения задач",
+    "Добавлено обновление статуса задач в Project Master",
+    "Реализована система стратегий выполнения",
+    "Unit-тесты написаны и покрывают >80% новой логики",
+    "Код успешно прошел все шаги CI (linting, testing)",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

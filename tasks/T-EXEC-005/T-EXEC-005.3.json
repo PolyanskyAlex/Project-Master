@@ -1,0 +1,24 @@
+{
+  "subtask_number": ">>>ПОДЗАДАЧА<<< T-EXEC-005.3: CI/CD pipeline обновления",
+  "status": "Ожидание",
+  "dependencies": ["T-EXEC-005.1"],
+  "priority": "Средний",
+  "responsible": "AI-DevOps-Agent",
+  "detailed_description": {
+    "process_logic": "Обновление CI/CD pipeline для автоматического развертывания функционала выполнения задач",
+    "schemas": "GitHub Actions, deployment automation, rollback procedures",
+    "code_reference": ".github/workflows/deploy-task-execution.yml",
+    "task_goal": "Автоматизировать развертывание и обновления",
+    "expected_result": "Автоматизированный CI/CD pipeline с rollback возможностями",
+    "security_note": "Внимание! При работе с API-ключами или другими секретами строго следуй политике 'secretsManagement' из архитектуры."
+  },
+  "definition_of_done": [
+    "Обновлен CI/CD pipeline для новых компонентов",
+    "Добавлены автоматические тесты в pipeline",
+    "Настроена процедура автоматического развертывания",
+    "Реализована возможность быстрого отката",
+    "Протестирован полный цикл CI/CD",
+    "Документирована процедура обновлений",
+    "Изменения оформлены в виде одного коммита в соответствии с Conventional Commits"
+  ]
+} 

@@ -1,0 +1,32 @@
+{
+  "task_number": ">>>ЗАДАЧА<<< T-EXEC-004: Тестирование и документация",
+  "status": "Выполнена",
+  "dependencies": ["T-EXEC-001", "T-EXEC-002", "T-EXEC-003"],
+  "priority": "Высокий",
+  "responsible": "AI-DevOps-Agent",
+  "detailed_description": {
+    "process_logic": "Комплексное тестирование всего функционала выполнения задач, создание документации и настройка CI/CD процессов",
+    "schemas": "Integration tests, E2E tests, API documentation, user guides",
+    "task_goal": "Обеспечить качество и надежность функционала выполнения задач",
+    "expected_result": "Полностью протестированный и задокументированный функционал"
+  },
+  "commit": {
+    "requirement": "Все изменения должны быть оформлены отдельными коммитами с четким описанием",
+    "template": "test(task-execution): {subject}\\n\\n{body}\\n\\nCloses: #T-EXEC-004"
+  },
+  "dockerization_requirements": {
+    "required": true,
+    "dockerfile_path": "docker-compose.test.yml",
+    "best_practices": [
+      "Создать отдельную Docker среду для тестирования",
+      "Настроить автоматические тесты в CI/CD pipeline",
+      "Обеспечить изоляцию тестовых данных"
+    ]
+  },
+  "subtasks_count": 3,
+  "subtasks_list": [
+    "T-EXEC-004.1: Integration тесты",
+    "T-EXEC-004.2: E2E тесты пользовательских сценариев",
+    "T-EXEC-004.3: Документация API и пользовательских руководств"
+  ]
+} 
