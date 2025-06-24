@@ -138,11 +138,52 @@ export class ApiService implements IApiService {
     // Projects
     async getProjects(): Promise<Project[]> {
         try {
-            const response: AxiosResponse<Project[]> = await this.client.get('/api/v1/projects');
-            return response.data;
+            const response: AxiosResponse<any[]> = await this.client.get('/api/v1/projects');
+            // Map API response (camelCase) to extension types (snake_case)
+            return response.data.map((project: any) => ({
+                id: project.id,
+                name: project.name,
+                description: project.description,
+                status: this.mapProjectStatus(project.status),
+                created_at: project.createdAt || project.created_at,
+                updated_at: project.updatedAt || project.updated_at,
+                functional_block_id: project.functional_block_id
+            }));
         } catch (error) {
             this.logger.error('Failed to fetch projects', error);
             throw error;
+        }
+    }
+
+    private mapProjectStatus(status: string): 'active' | 'completed' | 'on_hold' | 'cancelled' {
+        // Map API status values to expected enum values
+        switch (status?.toLowerCase()) {
+            case 'планирование':
+            case 'planning':
+                return 'active';
+            case 'в работе':
+            case 'in_progress':
+            case 'активный':
+            case 'active':
+                return 'active';
+            case 'завершён':
+            case 'завершен':
+            case 'completed':
+            case 'done':
+                return 'completed';
+            case 'приостановлен':
+            case 'на паузе':
+            case 'on_hold':
+            case 'paused':
+                return 'on_hold';
+            case 'отменён':
+            case 'отменен':
+            case 'cancelled':
+            case 'canceled':
+                return 'cancelled';
+            default:
+                this.logger.warn(`Unknown project status: ${status}, defaulting to 'active'`);
+                return 'active';
         }
     }
 
@@ -220,8 +261,15 @@ export class ApiService implements IApiService {
     // Functional Blocks
     async getFunctionalBlocks(): Promise<FunctionalBlock[]> {
         try {
-            const response: AxiosResponse<FunctionalBlock[]> = await this.client.get('/api/v1/functional-blocks');
-            return response.data;
+            const response: AxiosResponse<any[]> = await this.client.get('/api/v1/functional-blocks');
+            // Map API response (camelCase) to extension types (snake_case)
+            return response.data.map((block: any) => ({
+                id: block.id,
+                name: block.name,
+                description: block.description,
+                created_at: block.createdAt || block.created_at,
+                updated_at: block.updatedAt || block.updated_at
+            }));
         } catch (error) {
             this.logger.error('Failed to fetch functional blocks', error);
             throw error;

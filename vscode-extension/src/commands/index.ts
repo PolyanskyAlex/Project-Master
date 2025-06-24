@@ -58,16 +58,44 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
     planPushCommands.registerCommands();
 
     // Core navigation and selection commands
-    const selectProjectCommand = vscode.commands.registerCommand('projectMaster.selectProject', async (projectOrId: Project | string) => {
-        console.log('=== Project Master: selectProjectCommand registered ===');
+    const selectProjectCommand = vscode.commands.registerCommand('projectMaster.selectProject', async (projectOrIdOrTreeItem: Project | string | any) => {
+        console.log('=== Project Master: selectProjectCommand called ===');
+        console.log('Received argument type:', typeof projectOrIdOrTreeItem);
+        console.log('Received argument value:', projectOrIdOrTreeItem);
+        
         try {
-            // Fix: Handle both project object and project ID to prevent circular reference issues
-            const project = typeof projectOrId === 'string' 
-                ? projectsProvider.getProjectById(projectOrId)
-                : projectOrId;
+            let project: Project | undefined;
+            
+            // Fix: Handle all possible argument types - string ID, Project object, or ProjectTreeItem
+            if (typeof projectOrIdOrTreeItem === 'string') {
+                // Direct project ID
+                project = projectsProvider.getProjectById(projectOrIdOrTreeItem);
+            } else if (projectOrIdOrTreeItem && typeof projectOrIdOrTreeItem === 'object') {
+                // Check if it's a ProjectTreeItem (has type and project properties)
+                if (projectOrIdOrTreeItem.type === 'project' && projectOrIdOrTreeItem.project) {
+                    project = projectOrIdOrTreeItem.project;
+                    console.log('Extracted project from ProjectTreeItem:', project);
+                } else if (projectOrIdOrTreeItem.id && projectOrIdOrTreeItem.name) {
+                    // It's already a Project object
+                    project = projectOrIdOrTreeItem;
+                } else {
+                    logger.error('Unknown object structure received', projectOrIdOrTreeItem);
+                }
+            }
+            
+            console.log('Found project:', project);
+            console.log('Available projects count:', projectsProvider.getProjects().length);
+            console.log('Available projects:', projectsProvider.getProjects().map(p => ({ id: p.id, name: p.name })));
                 
             if (!project || !project.id) {
-                vscode.window.showWarningMessage('Invalid project selected');
+                logger.error('Invalid project selected', {
+                    receivedArgument: projectOrIdOrTreeItem,
+                    argumentType: typeof projectOrIdOrTreeItem,
+                    foundProject: project,
+                    availableProjectsCount: projectsProvider.getProjects().length,
+                    availableProjectIds: projectsProvider.getProjects().map(p => p.id)
+                });
+                vscode.window.showWarningMessage('Invalid project selected - could not extract project data');
                 return;
             }
             
