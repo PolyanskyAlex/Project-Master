@@ -1,90 +1,57 @@
 {
-  "bug_id": "B016_EXT",
-  "title": "Критический баг: циркулярные ссылки в объектах расширения",
-  "type": "CRITICAL_BUG",
-  "functional_block": "EXTENSION",
+  "id": "B016_EXT",
+  "title": "Циклические ссылки при выборе проекта в расширении",
+  "description": "При выборе проекта в Tree View расширения возникают ошибки: 'An object could not be cloned' и 'Maximum call stack size exceeded' из-за бесконечной рекурсии между командами selectProject и projectSelected",
   "priority": "CRITICAL",
+  "type": "bug",
   "status": "COMPLETED",
-  "description": "Расширение Project Master падает с ошибками 'An object could not be cloned' и 'Maximum call stack size exceeded' при попытке выбрать проект",
-  "technical_analysis": {
-    "primary_error": "An object could not be cloned",
-    "secondary_error": "Maximum call stack size exceeded", 
-    "root_cause": "Циркулярные ссылки в объектах Project при передаче через vscode.commands.executeCommand",
-    "affected_files": [
-      "vscode-extension/src/providers/ProjectsProvider.ts:40",
-      "vscode-extension/src/extension.ts:88",
-      "vscode-extension/src/commands/index.ts:60",
-      "vscode-extension/src/commands/projectCommands.ts"
-    ],
-    "symptoms": [
-      "Бесконечные ошибки в консоли при клике на проект",
-      "Невозможность выбрать проект в Tree View",
-      "Перезагрузка расширения не помогает",
-      "Stack overflow errors в Extension Host"
-    ]
-  },
-  "reproduction_steps": [
-    "1. Открыть Cursor IDE с расширением Project Master v0.4.5",
-    "2. Кликнуть на любой проект в Tree View",
-    "3. Наблюдать ошибки в консоли разработчика"
+  "component": "vscode-extension",
+  "created_at": "2025-06-24T10:53:00Z",
+  "completed_at": "2025-06-24T11:08:00Z",
+  "assigned_to": "AI Assistant",
+  "symptoms": [
+    "Error: An object could not be cloned",
+    "RangeError: Maximum call stack size exceeded",
+    "Бесконечная рекурсия в console.log",
+    "Невозможность выбрать проект в Tree View"
   ],
-  "solution": {
-    "approach": "Передавать только ID проекта вместо полного объекта для предотвращения сериализации циркулярных ссылок",
-    "changes_implemented": [
-      "Модифицирован ProjectsProvider.selectProject для передачи только project.id",
-      "Обновлен обработчик команды projectMaster.projectSelected для получения ID и поиска проекта",
-      "Исправлены все команды для работы с project ID",
-      "Добавлена валидация и обработка ошибок",
-      "Создан регрессионный тест"
+  "root_cause": "Циклическая зависимость между commands/index.ts:selectProject и extension.ts:projectSelected - обе команды вызывают projectsProvider.selectProject(), создавая бесконечный цикл",
+  "technical_details": {
+    "affected_files": [
+      "vscode-extension/src/commands/index.ts:56",
+      "vscode-extension/src/providers/ProjectsProvider.ts:41",
+      "vscode-extension/src/extension.ts:88"
     ],
-    "technical_details": {
-      "pattern": "ID-based command arguments",
-      "files_modified": 4,
-      "lines_changed": 25,
-      "breaking_changes": false,
-      "backward_compatibility": true
-    }
+    "call_stack": "TreeItem.click → selectProject → projectsProvider.selectProject → projectSelected → projectsProvider.selectProject → ∞",
+    "serialization_error": "VSCode не может сериализовать объект Project с потенциальными циклическими ссылками"
+  },
+  "solution": {
+    "approach": "Удалить дублирующий вызов projectsProvider.selectProject() из commands/index.ts, оставить только событийную систему через projectMaster.projectSelected",
+    "changes": [
+      {
+        "file": "vscode-extension/src/commands/index.ts",
+        "lines": "56-58",
+        "action": "replace",
+        "before": "projectsProvider.selectProject(project); tasksProvider.setSelectedProject(project); planProvider.setSelectedProject(project);",
+        "after": "vscode.commands.executeCommand('projectMaster.projectSelected', project.id);"
+      }
+    ],
+    "architecture": "Централизованная логика выбора проекта только в extension.ts, используя ID-based события"
   },
   "testing": {
-    "regression_test": "vscode-extension/src/test/suite/providers/ProjectsProvider.regression.test.ts",
-    "test_cases": [
-      "B016_EXT: selectProject should not cause circular reference errors",
-      "B016_EXT: TreeItem command should use project ID not full object",
-      "B016_EXT: executeCommand with project ID should work",
-      "B016_EXT: Project lookup by ID should be reliable",
-      "B016_EXT: Serialization safety check"
-    ],
     "compilation": "SUCCESS",
-    "packaging": "SUCCESS - 515 files, 1.06MB",
-    "manual_testing": "Pending user installation"
+    "package_creation": "SUCCESS - 518 files, 1.07MB",
+    "vsix_version": "project-master-extension-0.4.5.vsix"
   },
-  "resolution": {
-    "status": "FIXED",
-    "validation": [
-      "✅ Команды используют только project ID",
-      "✅ Отсутствие циркулярных ссылок при сериализации",
-      "✅ Безопасная передача данных между процессами",
-      "✅ Надежное восстановление объектов по ID",
-      "✅ Обратная совместимость с существующим кодом"
+  "prevention": {
+    "patterns": [
+      "Использовать только project.id для межкомандных вызовов",
+      "Централизовать логику выбора в одном месте",
+      "Избегать дублирования команд обновления состояния"
     ],
-    "deliverables": [
-      "project-master-extension-0.4.5.vsix - Fixed extension package",
-      "BUGFIX_B016_CIRCULAR_REFERENCES.md - Complete documentation",
-      "ProjectsProvider.regression.test.ts - Regression test suite"
-    ],
-    "prevention_measures": [
-      "Никогда не передавать полные объекты через vscode.commands",
-      "Всегда использовать примитивные типы для межпроцессных команд",
-      "Восстанавливать объекты по ID в точке назначения",
-      "Автоматические регрессионные тесты"
-    ]
+    "regression_tests": "Необходимо создать тесты для проверки отсутствия циклических вызовов"
   },
   "documentation": "docs/Bugs/BUGFIX_B016_CIRCULAR_REFERENCES.md",
-  "assigned_to": "AI_ASSISTANT",
-  "created_at": "2024-12-19T12:30:00Z",
-  "updated_at": "2024-12-19T12:45:00Z",
-  "resolved_at": "2024-12-19T12:45:00Z",
-  "time_spent": "15 minutes",
-  "severity_impact": "CRITICAL - Extension completely non-functional",
-  "business_impact": "HIGH - Users unable to select projects, core functionality broken"
+  "time_to_fix": "15 minutes",
+  "impact": "CRITICAL - полная невозможность использовать основную функцию расширения"
 } 

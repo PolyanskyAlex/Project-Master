@@ -73,10 +73,9 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
             
             logger.info(`Selecting project: ${project.name}`);
             
-            // Update all providers with selected project
-            projectsProvider.selectProject(project);
-            tasksProvider.setSelectedProject(project);
-            planProvider.setSelectedProject(project);
+            // Fix: Use event system to prevent circular reference - only emit projectSelected event
+            // The actual selection logic is handled in extension.ts
+            vscode.commands.executeCommand('projectMaster.projectSelected', project.id);
             
             // Show success message with quick actions
             vscode.window.showInformationMessage(
