@@ -244,6 +244,30 @@
         "icon": "$(comment-add)"
       },
       {
+        "command": "projectMaster.executeTask",
+        "title": "Execute Task",
+        "category": "Project Master",
+        "icon": "$(play)"
+      },
+      {
+        "command": "projectMaster.executeTaskById",
+        "title": "Execute Task by ID",
+        "category": "Project Master",
+        "icon": "$(play-circle)"
+      },
+      {
+        "command": "projectMaster.showExecutionHistory",
+        "title": "Show Execution History",
+        "category": "Project Master",
+        "icon": "$(history)"
+      },
+      {
+        "command": "projectMaster.showExecutionMetrics",
+        "title": "Show Execution Metrics",
+        "category": "Project Master",
+        "icon": "$(graph)"
+      },
+      {
         "command": "projectMaster.refreshAll",
         "title": "Refresh All Data",
         "category": "Project Master",
